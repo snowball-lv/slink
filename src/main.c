@@ -85,8 +85,16 @@ int main(int argc, char **argv) {
                 Elf64_Shdr *shdr = (Elf64_Shdr *) &shdrs_raw[k * ehdr.e_shentsize];
                 printf("\n");
                 printf("sh_name: %u\n", shdr->sh_name);
-                printf("sh_type: %u\n", shdr->sh_type);
-                printf("sh_flags: %lu\n", shdr->sh_flags);
+                printf("sh_type: %u [%s]\n", shdr->sh_type, ELFSectionTypeName(shdr->sh_type));
+                
+                printf("sh_flags: 0x%lx\n", shdr->sh_flags);
+                for (int fi = 0; fi < ELF_SHFS_CNT; fi++) {
+                    Elf64_Xword f = ELF_SHFS[fi];
+                    if (f & shdr->sh_flags) {
+                        printf("    [%s]\n", ELFSectionFlagName(f & shdr->sh_flags));
+                    }
+                }
+                
                 printf("sh_addr: %lu\n", shdr->sh_addr);
                 printf("sh_offset: %lu\n", shdr->sh_offset);
                 printf("sh_size: %lu\n", shdr->sh_size);

@@ -175,3 +175,66 @@ char *ELFVersionName(Elf64_Word e_version) {
     }
     return "{invalid version}";
 }
+
+char *ELFSectionTypeName(Elf64_Word sh_type) {
+    switch (sh_type) {
+        case 0: return "SHT_NULL";
+        case 1: return "SHT_PROGBITS";
+        case 2: return "SHT_SYMTAB";
+        case 3: return "SHT_STRTAB";
+        case 4: return "SHT_RELA";
+        case 5: return "SHT_HASH";
+        case 6: return "SHT_DYNAMIC";
+        case 7: return "SHT_NOTE";
+        case 8: return "SHT_NOBITS";
+        case 9: return "SHT_REL";
+        case 10: return "SHT_SHLIB";
+        case 11: return "SHT_DYNSYM";
+        case 14: return "SHT_INIT_ARRAY";
+        case 15: return "SHT_FINI_ARRAY";
+        case 16: return "SHT_PREINIT_ARRAY";
+        case 17: return "SHT_GROUP";
+        case 18: return "SHT_SYMTAB_SHNDX";
+        case 0x60000000: return "SHT_LOOS";
+        case 0x6fffffff: return "SHT_HIOS";
+        case 0x70000000: return "SHT_LOPROC";
+        case 0x7fffffff: return "SHT_HIPROC";
+        case 0x80000000: return "SHT_LOUSER";
+        case 0xffffffff: return "SHT_HIUSER";
+    }
+    return "{invalid section type}";
+}
+
+Elf64_Xword ELF_SHFS[] = {
+    0x1,
+    0x2,
+    0x4,
+    0x10,
+    0x20,
+    0x40,
+    0x80,
+    0x100,
+    0x200,
+    0x400,
+    0x0ff00000,
+    0xf0000000,
+};
+int ELF_SHFS_CNT = sizeof(ELF_SHFS) / sizeof(ELF_SHFS[0]);
+
+char *ELFSectionFlagName(Elf64_Xword sh_flag) {
+    switch (sh_flag) {
+        case 0x1: return "SHF_WRITE";
+        case 0x2: return "SHF_ALLOC";
+        case 0x4: return "SHF_EXECINSTR";
+        case 0x10: return "SHF_MERGE";
+        case 0x20: return "SHF_STRINGS";
+        case 0x40: return "SHF_INFO_LINK";
+        case 0x80: return "SHF_LINK_ORDER";
+        case 0x100: return "SHF_OS_NONCONFORMING";
+        case 0x200: return "SHF_GROUP";
+        case 0x400: return "SHF_TLS";
+        case 0x0ff00000: return "SHF_MASKOS";
+        case 0xf0000000: return "SHF_MASKPROC";
+    }
+    return "{invalid section flag}";
+}
