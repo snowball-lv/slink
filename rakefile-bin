@@ -1,0 +1,44 @@
+
+
+require "fileutils"
+
+
+NAME = "slink"
+
+SRCS = FileList["src/**/*.c"]
+DEPS = SRCS.pathmap("deps/%X.deps")
+OBJS = SRCS.pathmap("out/%X.o")
+BIN = "bin/#{NAME}"
+
+CFLAGS = [
+    "-c",
+    "-I inc",
+    # "-O2",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    # "-Werror",
+    # "-fPIC"
+]
+
+LFLAGS = [
+    # "-shared"
+]
+
+SRCS.zip(DEPS, OBJS).each do |src, dep, obj|
+    
+    raise "Missing dependency file: #{dep}" unless File.exist?(dep)
+    deps = File.read(dep).split(/\s+/)
+    
+    directory(File.dirname(obj))
+    file(obj => deps + [File.dirname(obj)]) do
+        sh "gcc #{CFLAGS.join(" ")} #{src} -o #{obj}"
+    end
+end
+
+directory File.dirname(BIN)
+file BIN => OBJS + [File.dirname(BIN)] do
+    sh "gcc #{LFLAGS.join(" ")} #{OBJS.join(" ")} -o #{BIN}"
+end
+
+task :default => BIN

@@ -1,0 +1,28 @@
+
+
+require "fileutils"
+
+
+SRCS = FileList[
+    "src/**/*.c"
+]
+DEPS = SRCS.pathmap("deps/%X.deps")
+
+CFLAGS = [
+    "-I inc",
+]
+
+SRCS.zip(DEPS).each do |src, dep|
+    directory(File.dirname(dep))
+    file(dep => [src, File.dirname(dep)]) do
+        output = `gcc -MM #{CFLAGS.join(' ')} #{src}`
+        deps = output.split(/[\s\\]+/).drop(1)
+        puts "#{src}:"
+        deps.each do |dep|
+            puts "    #{dep}"
+        end
+        File.write(dep, deps.join("\n"))
+    end
+end
+
+task :default => DEPS
