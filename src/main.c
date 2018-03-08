@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdint.h>
-#include <ctype.h>
+#include <limits.h>
 
 #include <slink/elf/ELF.h>
 
@@ -30,7 +29,7 @@ int main(int argc, char **argv) {
         ELFIdent ident;
         fread(&ident, sizeof(ident), 1, in);      
         
-        printf("\n");  
+        printf("\n");
         printf("FileIdent: 0x%x %.3s\n", ident.FileIdent[0], &ident.FileIdent[1]);
         printf("FileClass: %u [%s]\n", ident.FileClass, ELFFileClassName(ident.FileClass));
         printf("DataEncoding: %u [%s]\n", ident.DataEncoding, ELFDataEncodingName(ident.DataEncoding));
@@ -42,6 +41,61 @@ int main(int argc, char **argv) {
         
         Elf64_Ehdr ehdr;
         fread(&ehdr, sizeof(ehdr), 1, in);
+        
+        printf("\n");
+        
+        printf("e_type: %u [%s]\n", ehdr.e_type, ELFTypeName(ehdr.e_type));
+        printf("e_machine: %u [%s]\n", ehdr.e_machine, ELFMachineName(ehdr.e_machine));
+        printf("e_version: %u [%s]\n", ehdr.e_version, ELFVersionName(ehdr.e_version));
+        
+        printf("e_entry: %lu\n", ehdr.e_entry);
+        printf("e_phoff: %lu\n", ehdr.e_phoff);
+        printf("e_shoff: %lu\n", ehdr.e_shoff);
+        printf("e_flags: %u\n", ehdr.e_flags);
+        printf("e_ehsize: %u\n", ehdr.e_ehsize);
+        printf("e_phentsize: %u\n", ehdr.e_phentsize);
+        printf("e_phnum: %u\n", ehdr.e_phnum);
+        printf("e_shentsize: %u\n", ehdr.e_shentsize);
+        printf("e_shnum: %u\n", ehdr.e_shnum);
+        printf("e_shstrndx: %u\n", ehdr.e_shstrndx);
+        
+        if (ehdr.e_shoff != 0) {
+            
+            assert(ehdr.e_shoff <= LONG_MAX);
+            fseek(in, (long int) ehdr.e_shoff, SEEK_SET);
+            
+            uint64_t shnum = ehdr.e_shnum;
+            if (shnum == SHN_UNDEF) {
+                fpos_t pos;
+                fgetpos(in, &pos);
+                Elf64_Shdr shdr;
+                fread(&shdr, sizeof(shdr), 1, in);
+                shnum = shdr.sh_size;
+                fsetpos(in, &pos);
+            }
+            
+            printf("\n");
+            printf("real shnum: %lu\n", shnum);
+            
+            char *shdrs_raw = malloc(shnum * ehdr.e_shentsize);
+            fread(shdrs_raw, ehdr.e_shentsize, shnum, in);
+            
+            for (uint64_t k = 0; k < shnum; k++) {
+                
+                Elf64_Shdr *shdr = (Elf64_Shdr *) &shdrs_raw[k * ehdr.e_shentsize];
+                printf("\n");
+                printf("sh_name: %u\n", shdr->sh_name);
+                printf("sh_type: %u\n", shdr->sh_type);
+                printf("sh_flags: %lu\n", shdr->sh_flags);
+                printf("sh_addr: %lu\n", shdr->sh_addr);
+                printf("sh_offset: %lu\n", shdr->sh_offset);
+                printf("sh_size: %lu\n", shdr->sh_size);
+                printf("sh_link: %u\n", shdr->sh_link);
+                printf("sh_info: %u\n", shdr->sh_info);
+                printf("sh_addralign: %lu\n", shdr->sh_addralign);
+                printf("sh_entsize: %lu\n", shdr->sh_entsize);
+            }
+        }
         
         fclose(in);
     }

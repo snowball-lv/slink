@@ -7,8 +7,10 @@ typedef uint16_t Elf64_Half;
 typedef uint32_t Elf64_Word;
 typedef uint64_t Elf64_Addr;
 typedef uint64_t Elf64_Off;
+typedef uint64_t Elf64_Xword;
 
 #define EI_NIDENT 16
+#define SHN_UNDEF 0
 
 typedef union {
     struct {
@@ -39,7 +41,24 @@ typedef struct {
     Elf64_Half      e_shstrndx;
 } Elf64_Ehdr;
 
+typedef struct {
+    Elf64_Word	sh_name;
+    Elf64_Word	sh_type;
+    Elf64_Xword	sh_flags;
+    Elf64_Addr	sh_addr;
+    Elf64_Off	sh_offset;
+    Elf64_Xword	sh_size;
+    Elf64_Word	sh_link;
+    Elf64_Word	sh_info;
+    Elf64_Xword	sh_addralign;
+    Elf64_Xword	sh_entsize;
+} Elf64_Shdr;
+
 char *ELFFileClassName(uint8_t FileClass);
 char *ELFDataEncodingName(uint8_t DataEncoding);
 char *ELFFileVersionName(uint8_t FileVersion);
 char *ELFOSABIIdentName(uint8_t OSABIIdent);
+
+char *ELFTypeName(Elf64_Half e_type);
+char *ELFMachineName(Elf64_Half e_machine);
+char *ELFVersionName(Elf64_Word e_version);
