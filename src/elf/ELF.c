@@ -289,3 +289,32 @@ char *ELFSymTypeName(unsigned char st_type) {
     }
     return "{invalid sym type}";
 }
+
+char *ELFSymVisibilityName(unsigned char st_other) {
+    switch (st_other) {
+        case 0: return "STV_DEFAULT";
+        case 1: return "STV_INTERNAL";
+        case 2: return "STV_HIDDEN";
+        case 3: return "STV_PROTECTED";
+    }
+    return "{invalid sym visibility}";
+}
+
+char *ELFSpecialSectionName(Elf64_Half index) {
+    switch (index) {
+        case 0:         return "SHN_UNDEF";
+        case 0xfff1:    return "SHN_ABS";
+        case 0xfff2:    return "SHN_COMMON";
+        case 0xffff:    return "SHN_XINDEX";
+        default:
+            if (0xff00 <= index && index <= 0xffff) {
+                if (0xff00 <= index && index <= 0xff1f) {
+                    return "Proc specific";
+                } else if (0xff20 <= index && index <= 0xff3f) {
+                    return "OS specific";
+                }
+                return "Reserved";
+            }
+    }
+    return 0;
+}

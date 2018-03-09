@@ -148,8 +148,18 @@ int main(int argc, char **argv) {
                         printf("    %u [%s]\n", ELF64_ST_BIND(sym->st_info), ELFSymBindingName(ELF64_ST_BIND(sym->st_info)));
                         printf("    %u [%s]\n", ELF64_ST_TYPE(sym->st_info), ELFSymTypeName(ELF64_ST_TYPE(sym->st_info)));
                     	printf("st_other: %u\n", sym->st_other);
-                    	printf("st_shndx: %u\n", sym->st_shndx);
-                    	printf("st_value: %lu\n", sym->st_value);
+                        printf("    %u [%s]\n", ELF64_ST_VISIBILITY(sym->st_other), ELFSymVisibilityName(ELF64_ST_VISIBILITY(sym->st_other)));
+                    	
+                        char *sh_name = ELFSpecialSectionName(sym->st_shndx);
+                        if (sh_name == 0) {
+                            char *sh_str_tab = sec_datas[ehdr.e_shstrndx];
+                            Elf64_Shdr *shdr = (Elf64_Shdr *) &shdrs_raw[sym->st_shndx * ehdr.e_shentsize];
+                            sh_name = &sh_str_tab[shdr->sh_name];
+                            
+                        }
+                        printf("st_shndx: %u [%s]\n", sym->st_shndx, sh_name);
+                    	
+                        printf("st_value: %lu\n", sym->st_value);
                     	printf("st_size: %lu\n", sym->st_size);
                     }
                 }
