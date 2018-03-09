@@ -244,10 +244,20 @@ char *ELFSymBindingName(unsigned char st_bind) {
         case 0: return "STB_LOCAL";
         case 1: return "STB_GLOBAL";
         case 2: return "STB_WEAK";
-        case 10: return "STB_LOOS";
-        case 12: return "STB_HIOS";
-        case 13: return "STB_LOPROC";
-        case 15: return "STB_HIPROC";
+        
+        // case 10: return "STB_LOOS";
+        // case 12: return "STB_HIOS";
+        case 10:
+        case 11:
+        case 12:
+            return "OS specific";
+        
+        // case 13: return "STB_LOPROC";
+        // case 15: return "STB_HIPROC";
+        case 13:
+        case 14:
+        case 15:
+            return "Proc specific";
     }
     return "{invalid sym binding}";
 }
@@ -261,10 +271,21 @@ char *ELFSymTypeName(unsigned char st_type) {
         case 4: return "STT_FILE";
         case 5: return "STT_COMMON";
         case 6: return "STT_TLS";
-        case 10: return "STT_LOOS";
-        case 12: return "STT_HIOS";
-        case 13: return "STT_LOPROC";
-        case 15: return "STT_HIPROC";
+        
+        // case 10: return "STT_LOOS";
+        // case 12: return "STT_HIOS";
+        case 10:
+        case 11:
+        case 12:
+            return "OS specific";
+        
+        // case 13: return "STT_LOPROC";
+        // case 15: return "STT_HIPROC";
+        case 13:
+        case 14:
+        case 15:
+            return "Proc specific";
+        
     }
     return "{invalid sym type}";
 }
