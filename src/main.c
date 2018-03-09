@@ -138,13 +138,17 @@ int main(int argc, char **argv) {
                     
                     char *data = sec_datas[k];
                     for (size_t off = 0; off < shdr->sh_size; off += shdr->sh_entsize) {
+                        
                         Elf64_Sym *sym = (Elf64_Sym *) &data[off];
                         char *str_tab = sec_datas[shdr->sh_link];
+                        
                         printf("\n");
-                    	printf("st_name: %lu, [%s]\n", sym->st_name, &str_tab[sym->st_name]);
-                    	printf("st_info: %lu\n", sym->st_info);
-                    	printf("st_other: %lu\n", sym->st_other);
-                    	printf("st_shndx: %lu\n", sym->st_shndx);
+                    	printf("st_name: %u [%s]\n", sym->st_name, &str_tab[sym->st_name]);
+                    	printf("st_info: %u\n", sym->st_info);
+                        printf("    %u [%s]\n", ELF64_ST_BIND(sym->st_info), ELFSymBindingName(ELF64_ST_BIND(sym->st_info)));
+                        printf("    %u [%s]\n", ELF64_ST_TYPE(sym->st_info), ELFSymTypeName(ELF64_ST_TYPE(sym->st_info)));
+                    	printf("st_other: %u\n", sym->st_other);
+                    	printf("st_shndx: %u\n", sym->st_shndx);
                     	printf("st_value: %lu\n", sym->st_value);
                     	printf("st_size: %lu\n", sym->st_size);
                     }

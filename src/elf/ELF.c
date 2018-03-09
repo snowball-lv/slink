@@ -238,3 +238,33 @@ char *ELFSectionFlagName(Elf64_Xword sh_flag) {
     }
     return "{invalid section flag}";
 }
+
+char *ELFSymBindingName(unsigned char st_bind) {
+    switch (st_bind) {
+        case 0: return "STB_LOCAL";
+        case 1: return "STB_GLOBAL";
+        case 2: return "STB_WEAK";
+        case 10: return "STB_LOOS";
+        case 12: return "STB_HIOS";
+        case 13: return "STB_LOPROC";
+        case 15: return "STB_HIPROC";
+    }
+    return "{invalid sym binding}";
+}
+
+char *ELFSymTypeName(unsigned char st_type) {
+    switch (st_type) {
+        case 0: return "STT_NOTYPE";
+        case 1: return "STT_OBJECT";
+        case 2: return "STT_FUNC";
+        case 3: return "STT_SECTION";
+        case 4: return "STT_FILE";
+        case 5: return "STT_COMMON";
+        case 6: return "STT_TLS";
+        case 10: return "STT_LOOS";
+        case 12: return "STT_HIOS";
+        case 13: return "STT_LOPROC";
+        case 15: return "STT_HIPROC";
+    }
+    return "{invalid sym type}";
+}

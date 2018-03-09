@@ -14,6 +14,9 @@ typedef uint64_t Elf64_Xword;
 #define SHT_NOBITS  8
 #define SHT_SYMTAB  2
 
+#define ELF64_ST_BIND(i)    ((i)>>4)
+#define ELF64_ST_TYPE(i)    ((i)&0xf)
+
 typedef union {
     struct {
         char    FileIdent[4];
@@ -79,3 +82,6 @@ extern int ELF_SHFS_CNT;
 
 char *ELFSectionTypeName(Elf64_Word sh_type);
 char *ELFSectionFlagName(Elf64_Xword sh_flag);
+
+char *ELFSymBindingName(unsigned char st_bind);
+char *ELFSymTypeName(unsigned char st_type);
