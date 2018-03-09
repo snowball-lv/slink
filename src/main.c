@@ -80,11 +80,31 @@ int main(int argc, char **argv) {
             char *shdrs_raw = malloc(shnum * ehdr.e_shentsize);
             fread(shdrs_raw, ehdr.e_shentsize, shnum, in);
             
+            char **sec_datas = malloc(shnum * sizeof(void *));
+
+            for (uint64_t k = 0; k < shnum; k++) {
+                Elf64_Shdr *shdr = (Elf64_Shdr *) &shdrs_raw[k * ehdr.e_shentsize];
+                if (shdr->sh_type != SHT_NOBITS) {
+                    char *data = malloc(shdr->sh_size);
+                    
+                    assert(ehdr.e_shoff <= LONG_MAX);
+                    fseek(in, (long int) shdr->sh_offset, SEEK_SET);
+                    fread(data, shdr->sh_size, 1, in);
+                    
+                    sec_datas[k] = data;
+                } else {
+                    sec_datas[k] = 0;
+                }
+            }
+            
             for (uint64_t k = 0; k < shnum; k++) {
                 
                 Elf64_Shdr *shdr = (Elf64_Shdr *) &shdrs_raw[k * ehdr.e_shentsize];
                 printf("\n");
-                printf("sh_name: %u\n", shdr->sh_name);
+                
+                char *str_tab = sec_datas[ehdr.e_shstrndx];
+                printf("sh_name: %u [%s]\n", shdr->sh_name, &str_tab[shdr->sh_name]);
+                
                 printf("sh_type: %u [%s]\n", shdr->sh_type, ELFSectionTypeName(shdr->sh_type));
                 
                 printf("sh_flags: 0x%lx\n", shdr->sh_flags);
@@ -95,13 +115,13 @@ int main(int argc, char **argv) {
                     }
                 }
                 
-                printf("sh_addr: %lu\n", shdr->sh_addr);
-                printf("sh_offset: %lu\n", shdr->sh_offset);
-                printf("sh_size: %lu\n", shdr->sh_size);
-                printf("sh_link: %u\n", shdr->sh_link);
-                printf("sh_info: %u\n", shdr->sh_info);
-                printf("sh_addralign: %lu\n", shdr->sh_addralign);
-                printf("sh_entsize: %lu\n", shdr->sh_entsize);
+                // printf("sh_addr: %lu\n", shdr->sh_addr);
+                // printf("sh_offset: %lu\n", shdr->sh_offset);
+                // printf("sh_size: %lu\n", shdr->sh_size);
+                // printf("sh_link: %u\n", shdr->sh_link);
+                // printf("sh_info: %u\n", shdr->sh_info);
+                // printf("sh_addralign: %lu\n", shdr->sh_addralign);
+                // printf("sh_entsize: %lu\n", shdr->sh_entsize);
             }
         }
         

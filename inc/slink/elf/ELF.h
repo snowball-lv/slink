@@ -9,8 +9,9 @@ typedef uint64_t Elf64_Addr;
 typedef uint64_t Elf64_Off;
 typedef uint64_t Elf64_Xword;
 
-#define EI_NIDENT 16
-#define SHN_UNDEF 0
+#define EI_NIDENT   16
+#define SHN_UNDEF   0
+#define SHT_NOBITS  8
 
 typedef union {
     struct {
