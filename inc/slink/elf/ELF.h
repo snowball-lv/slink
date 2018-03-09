@@ -12,6 +12,7 @@ typedef uint64_t Elf64_Xword;
 #define EI_NIDENT   16
 #define SHN_UNDEF   0
 #define SHT_NOBITS  8
+#define SHT_SYMTAB  2
 
 typedef union {
     struct {
@@ -54,6 +55,15 @@ typedef struct {
     Elf64_Xword	sh_addralign;
     Elf64_Xword	sh_entsize;
 } Elf64_Shdr;
+
+typedef struct {
+	Elf64_Word     st_name;
+	unsigned char  st_info;
+	unsigned char  st_other;
+	Elf64_Half     st_shndx;
+	Elf64_Addr     st_value;
+	Elf64_Xword    st_size;
+} Elf64_Sym;
 
 char *ELFFileClassName(uint8_t FileClass);
 char *ELFDataEncodingName(uint8_t DataEncoding);

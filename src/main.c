@@ -97,31 +97,58 @@ int main(int argc, char **argv) {
                 }
             }
             
+            // for (uint64_t k = 0; k < shnum; k++) {
+            //     
+            //     Elf64_Shdr *shdr = (Elf64_Shdr *) &shdrs_raw[k * ehdr.e_shentsize];
+            //     printf("\n");
+            //     
+            //     char *str_tab = sec_datas[ehdr.e_shstrndx];
+            //     printf("sh_name: %u [%s]\n", shdr->sh_name, &str_tab[shdr->sh_name]);
+            //     
+            //     printf("sh_type: %u [%s]\n", shdr->sh_type, ELFSectionTypeName(shdr->sh_type));
+            //     
+            //     printf("sh_flags: 0x%lx\n", shdr->sh_flags);
+            //     for (int fi = 0; fi < ELF_SHFS_CNT; fi++) {
+            //         Elf64_Xword f = ELF_SHFS[fi];
+            //         if (f & shdr->sh_flags) {
+            //             printf("    [%s]\n", ELFSectionFlagName(f & shdr->sh_flags));
+            //         }
+            //     }
+            //     
+            //     // printf("sh_addr: %lu\n", shdr->sh_addr);
+            //     // printf("sh_offset: %lu\n", shdr->sh_offset);
+            //     // printf("sh_size: %lu\n", shdr->sh_size);
+            //     // printf("sh_link: %u\n", shdr->sh_link);
+            //     // printf("sh_info: %u\n", shdr->sh_info);
+            //     // printf("sh_addralign: %lu\n", shdr->sh_addralign);
+            //     // printf("sh_entsize: %lu\n", shdr->sh_entsize);
+            // }
+            
             for (uint64_t k = 0; k < shnum; k++) {
-                
                 Elf64_Shdr *shdr = (Elf64_Shdr *) &shdrs_raw[k * ehdr.e_shentsize];
-                printf("\n");
-                
-                char *str_tab = sec_datas[ehdr.e_shstrndx];
-                printf("sh_name: %u [%s]\n", shdr->sh_name, &str_tab[shdr->sh_name]);
-                
-                printf("sh_type: %u [%s]\n", shdr->sh_type, ELFSectionTypeName(shdr->sh_type));
-                
-                printf("sh_flags: 0x%lx\n", shdr->sh_flags);
-                for (int fi = 0; fi < ELF_SHFS_CNT; fi++) {
-                    Elf64_Xword f = ELF_SHFS[fi];
-                    if (f & shdr->sh_flags) {
-                        printf("    [%s]\n", ELFSectionFlagName(f & shdr->sh_flags));
+                if (shdr->sh_type == SHT_SYMTAB) {
+
+                    printf("\n");
+                    
+                    char *str_tab = sec_datas[ehdr.e_shstrndx];
+                    printf("sh_name: %u [%s]\n", shdr->sh_name, &str_tab[shdr->sh_name]);
+                    printf("sh_offset: %lu\n", shdr->sh_offset);
+                    printf("sh_size: %lu\n", shdr->sh_size);
+                    printf("sh_entsize: %lu\n", shdr->sh_entsize);
+                    
+                    char *data = sec_datas[k];
+                    for (size_t off = 0; off < shdr->sh_size; off += shdr->sh_entsize) {
+                        Elf64_Sym *sym = (Elf64_Sym *) &data[off];
+                        char *str_tab = sec_datas[shdr->sh_link];
+                        printf("\n");
+                    	printf("st_name: %lu, [%s]\n", sym->st_name, &str_tab[sym->st_name]);
+                    	printf("st_info: %lu\n", sym->st_info);
+                    	printf("st_other: %lu\n", sym->st_other);
+                    	printf("st_shndx: %lu\n", sym->st_shndx);
+                    	printf("st_value: %lu\n", sym->st_value);
+                    	printf("st_size: %lu\n", sym->st_size);
                     }
                 }
-                
-                // printf("sh_addr: %lu\n", shdr->sh_addr);
-                // printf("sh_offset: %lu\n", shdr->sh_offset);
-                // printf("sh_size: %lu\n", shdr->sh_size);
-                // printf("sh_link: %u\n", shdr->sh_link);
-                // printf("sh_info: %u\n", shdr->sh_info);
-                // printf("sh_addralign: %lu\n", shdr->sh_addralign);
-                // printf("sh_entsize: %lu\n", shdr->sh_entsize);
             }
         }
         
