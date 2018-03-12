@@ -223,6 +223,12 @@ static void process_obj(FILE *in) {
     assert(ehdr.e_phentsize == 0);
     assert(ehdr.e_phnum == 0);
     
+    // pointers to section headers and data
+    size_t shnum = 0;
+    char *shdrs_raw = 0;
+    char **sec_data_array = 0;
+    
+    // read in section data if available
     if (ehdr.e_shoff != 0) {
         
         assert(ehdr.e_shoff <= LONG_MAX);
@@ -237,7 +243,7 @@ static void process_obj(FILE *in) {
         
         // get real number of section entries
         assert(sizeof(size_t) >= sizeof(ehdr.e_shnum));
-        size_t shnum = ehdr.e_shnum;
+        shnum = ehdr.e_shnum;
         if (shnum == SHN_UNDEF) {
             shnum = shdr_null.sh_size;
         } else {
@@ -245,11 +251,11 @@ static void process_obj(FILE *in) {
         }
         
         // allocate space for section headers
-        char *shdrs_raw = malloc(shnum * ehdr.e_shentsize);
+        shdrs_raw = malloc(shnum * ehdr.e_shentsize);
         fread(shdrs_raw, ehdr.e_shentsize, shnum, in);
         
         // allcoate space for section data
-        char **sec_data_array = malloc(shnum * sizeof(void *));
+        sec_data_array = malloc(shnum * sizeof(void *));
         
         // read in section data
         for (size_t i = 0; i < shnum; i++) {
@@ -262,6 +268,37 @@ static void process_obj(FILE *in) {
                 fread(data, shdr->sh_size, 1, in);
             }    
             sec_data_array[i] = data;
+        }
+    }
+    
+    // symbol table header and data
+    Elf64_Shdr *sym_tab_shdr = 0;
+    char *sym_tab_data = 0;
+    
+    // find symbol table header and data
+    for (size_t i = 0; i < shnum; i++) {
+        Elf64_Shdr *shdr = (Elf64_Shdr *) &shdrs_raw[i * ehdr.e_shentsize];
+        if (shdr->sh_type == SHT_SYMTAB) {
+            sym_tab_shdr = shdr;
+            sym_tab_data = sec_data_array[i];
+            break;
+        }
+    }
+    
+    if (sym_tab_shdr != 0) {
+        char *str_tab = sec_data_array[sym_tab_shdr->sh_link];
+        for (size_t off = 0; off < sym_tab_shdr->sh_size; off += sym_tab_shdr->sh_entsize) {
+            
+            Elf64_Sym *sym = (Elf64_Sym *) &sym_tab_data[off];
+
+            char *sh_name = ELFSpecialSectionName(sym->st_shndx);
+            if (sh_name == 0) {
+                char *sh_str_tab = sec_data_array[ehdr.e_shstrndx];
+                Elf64_Shdr *shdr = (Elf64_Shdr *) &shdrs_raw[sym->st_shndx * ehdr.e_shentsize];
+                sh_name = &sh_str_tab[shdr->sh_name];
+            }
+            
+            printf("[%s] [%s]\n", sh_name, &str_tab[sym->st_name]);
         }
     }
 }
