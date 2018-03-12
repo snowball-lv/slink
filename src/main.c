@@ -3,9 +3,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <limits.h>
+#include <string.h>
 
 #include <slink/elf/ELF.h>
 
+
+static void process_obj(FILE *in);
 
 int main(int argc, char **argv) {
     printf("--- S LINK ---\n");
@@ -14,7 +17,22 @@ int main(int argc, char **argv) {
     int in_cnt = argc - 1;
     printf("Inputs: %d\n", in_cnt);
     
-    for (int i = 1; i < argc; i++) {
+    
+    for (int i = 1; i < 2; i++) {
+        
+        char *name = argv[i];
+        printf("\n");
+        printf("File: [%s]\n", name);
+        
+        FILE *in = fopen(name, "rb");
+        assert(in);
+        process_obj(in);
+        fclose(in);
+    }
+    
+    return 0;
+    
+    for (int i = 1; i < 2; i++) {
         
         char *name = argv[i];
         printf("\n");
@@ -127,7 +145,7 @@ int main(int argc, char **argv) {
             for (uint64_t k = 0; k < shnum; k++) {
                 Elf64_Shdr *shdr = (Elf64_Shdr *) &shdrs_raw[k * ehdr.e_shentsize];
                 if (shdr->sh_type == SHT_SYMTAB) {
-
+                
                     printf("\n");
                     
                     char *str_tab = sec_datas[ehdr.e_shstrndx];
@@ -136,19 +154,20 @@ int main(int argc, char **argv) {
                     printf("sh_size: %lu\n", shdr->sh_size);
                     printf("sh_entsize: %lu\n", shdr->sh_entsize);
                     
+                    printf("\n");
+                    
                     char *data = sec_datas[k];
                     for (size_t off = 0; off < shdr->sh_size; off += shdr->sh_entsize) {
                         
                         Elf64_Sym *sym = (Elf64_Sym *) &data[off];
                         char *str_tab = sec_datas[shdr->sh_link];
                         
-                        printf("\n");
-                    	printf("st_name: %u [%s]\n", sym->st_name, &str_tab[sym->st_name]);
-                    	printf("st_info: %u\n", sym->st_info);
-                        printf("    %u [%s]\n", ELF64_ST_BIND(sym->st_info), ELFSymBindingName(ELF64_ST_BIND(sym->st_info)));
-                        printf("    %u [%s]\n", ELF64_ST_TYPE(sym->st_info), ELFSymTypeName(ELF64_ST_TYPE(sym->st_info)));
-                    	printf("st_other: %u\n", sym->st_other);
-                        printf("    %u [%s]\n", ELF64_ST_VISIBILITY(sym->st_other), ELFSymVisibilityName(ELF64_ST_VISIBILITY(sym->st_other)));
+                    	// printf("st_name: %u [%s]\n", sym->st_name, &str_tab[sym->st_name]);
+                    	// printf("st_info: %u\n", sym->st_info);
+                        // printf("    %u [%s]\n", ELF64_ST_BIND(sym->st_info), ELFSymBindingName(ELF64_ST_BIND(sym->st_info)));
+                        // printf("    %u [%s]\n", ELF64_ST_TYPE(sym->st_info), ELFSymTypeName(ELF64_ST_TYPE(sym->st_info)));
+                    	// printf("st_other: %u\n", sym->st_other);
+                        // printf("    %u [%s]\n", ELF64_ST_VISIBILITY(sym->st_other), ELFSymVisibilityName(ELF64_ST_VISIBILITY(sym->st_other)));
                     	
                         char *sh_name = ELFSpecialSectionName(sym->st_shndx);
                         if (sh_name == 0) {
@@ -157,10 +176,12 @@ int main(int argc, char **argv) {
                             sh_name = &sh_str_tab[shdr->sh_name];
                             
                         }
-                        printf("st_shndx: %u [%s]\n", sym->st_shndx, sh_name);
-                    	
-                        printf("st_value: %lu\n", sym->st_value);
-                    	printf("st_size: %lu\n", sym->st_size);
+                        // printf("st_shndx: %u [%s]\n", sym->st_shndx, sh_name);
+                    	// 
+                        // printf("st_value: %lu\n", sym->st_value);
+                    	// printf("st_size: %lu\n", sym->st_size);
+                        
+                    	printf("[%s] [%s]\n", sh_name, &str_tab[sym->st_name]);
                     }
                 }
             }
@@ -170,4 +191,77 @@ int main(int argc, char **argv) {
     }
     
     return 0;
+}
+
+static void process_obj(FILE *in) {
+    
+    fpos_t pos;
+    fgetpos(in, &pos);
+    
+    ELFIdent ident;
+    fread(&ident, sizeof(ident), 1, in);      
+    
+    // check magic number, bits, endianness
+    assert(strncmp(ident.FileIdent, ELF_MAGIC, 4) == 0);
+    assert(ident.FileClass == ELFCLASS64);
+    assert(ident.DataEncoding == ELFDATA2LSB);
+    
+    fsetpos(in, &pos);
+    
+    Elf64_Ehdr ehdr;
+    fread(&ehdr, sizeof(ehdr), 1, in);
+    
+    // make sure it's an amd64 relocatable
+    assert(ehdr.e_type == ET_REL);
+    assert(ehdr.e_machine == EM_X86_64);
+    assert(ehdr.e_version== EV_CURRENT);
+    assert(ehdr.e_flags == 0);
+    
+    // ...without any executable data
+    assert(ehdr.e_entry == 0);
+    assert(ehdr.e_phoff == 0);
+    assert(ehdr.e_phentsize == 0);
+    assert(ehdr.e_phnum == 0);
+    
+    if (ehdr.e_shoff != 0) {
+        
+        assert(ehdr.e_shoff <= LONG_MAX);
+        fseek(in, (long int) ehdr.e_shoff, SEEK_SET);
+        
+        // read in null section header
+        fpos_t pos;
+        fgetpos(in, &pos);
+        Elf64_Shdr shdr_null;
+        fread(&shdr_null, sizeof(shdr_null), 1, in);
+        fsetpos(in, &pos);
+        
+        // get real number of section entries
+        assert(sizeof(size_t) >= sizeof(ehdr.e_shnum));
+        size_t shnum = ehdr.e_shnum;
+        if (shnum == SHN_UNDEF) {
+            shnum = shdr_null.sh_size;
+        } else {
+            assert(shdr_null.sh_size == 0);
+        }
+        
+        // allocate space for section headers
+        char *shdrs_raw = malloc(shnum * ehdr.e_shentsize);
+        fread(shdrs_raw, ehdr.e_shentsize, shnum, in);
+        
+        // allcoate space for section data
+        char **sec_data_array = malloc(shnum * sizeof(void *));
+        
+        // read in section data
+        for (size_t i = 0; i < shnum; i++) {
+            Elf64_Shdr *shdr = (Elf64_Shdr *) &shdrs_raw[i * ehdr.e_shentsize];
+            char *data = 0;
+            if (shdr->sh_type != SHT_NOBITS) {
+                data = malloc(shdr->sh_size);
+                assert(ehdr.e_shoff <= LONG_MAX);
+                fseek(in, (long int) shdr->sh_offset, SEEK_SET);
+                fread(data, shdr->sh_size, 1, in);
+            }    
+            sec_data_array[i] = data;
+        }
+    }
 }

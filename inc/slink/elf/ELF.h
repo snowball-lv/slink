@@ -14,6 +14,13 @@ typedef uint64_t Elf64_Xword;
 #define SHT_NOBITS  8
 #define SHT_SYMTAB  2
 
+#define ELF_MAGIC   "\x7f" "ELF"
+#define ELFCLASS64  2
+#define ELFDATA2LSB 1
+#define EM_X86_64   62
+#define ET_REL      1
+#define EV_CURRENT  1
+
 #define ELF64_ST_BIND(i)        ((i)>>4)
 #define ELF64_ST_TYPE(i)        ((i)&0xf)
 #define ELF64_ST_VISIBILITY(o)  ((o)&0x3)
@@ -90,3 +97,39 @@ char *ELFSymTypeName(unsigned char st_type);
 char *ELFSymVisibilityName(unsigned char st_other);
 
 
+#define SHT_NULL            0
+#define SHT_PROGBITS        1
+#define SHT_SYMTAB          2
+#define SHT_STRTAB          3
+#define SHT_RELA            4
+#define SHT_HASH            5
+#define SHT_DYNAMIC         6
+#define SHT_NOTE            7
+#define SHT_NOBITS          8
+#define SHT_REL             9
+#define SHT_SHLIB           10
+#define SHT_DYNSYM          11
+#define SHT_INIT_ARRAY      14
+#define SHT_FINI_ARRAY      15
+#define SHT_PREINIT_ARRAY   16
+#define SHT_GROUP           17
+#define SHT_SYMTAB_SHNDX    18
+#define SHT_LOOS            0x60000000
+#define SHT_HIOS            0x6fffffff
+#define SHT_LOPROC          0x70000000
+#define SHT_HIPROC          0x7fffffff
+#define SHT_LOUSER          0x80000000
+#define SHT_HIUSER          0xffffffff
+
+#define SHF_WRITE               0x1
+#define SHF_ALLOC               0x2
+#define SHF_EXECINSTR           0x4
+#define SHF_MERGE               0x10
+#define SHF_STRINGS             0x20
+#define SHF_INFO_LINK           0x40
+#define SHF_LINK_ORDER          0x80
+#define SHF_OS_NONCONFORMING    0x100
+#define SHF_GROUP               0x200
+#define SHF_TLS                 0x400
+#define SHF_MASKOS              0x0ff00000
+#define SHF_MASKPROC            0xf0000000
