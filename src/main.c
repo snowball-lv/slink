@@ -10,7 +10,7 @@
 
 static void process_obj(FILE *in);
 
-int main(int argc, char **argv) {
+int main_old(int argc, char **argv) {
     printf("--- S LINK ---\n");
     
     printf("\n");
@@ -298,7 +298,13 @@ static void process_obj(FILE *in) {
                 sh_name = &sh_str_tab[shdr->sh_name];
             }
             
-            printf("[%s] [%s]\n", sh_name, &str_tab[sym->st_name]);
+            printf(
+                "0x%.8lx [%s] [%s] [%s] [%s]\n",
+                sym->st_value,
+                ELFSymBindingName(ELF64_ST_BIND(sym->st_info)),
+                ELFSymTypeName(ELF64_ST_TYPE(sym->st_info)),
+                sh_name,
+                &str_tab[sym->st_name]);
         }
     }
 }

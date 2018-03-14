@@ -96,6 +96,8 @@ char *ELFSymBindingName(unsigned char st_bind);
 char *ELFSymTypeName(unsigned char st_type);
 char *ELFSymVisibilityName(unsigned char st_other);
 
+void ELFPrintIdent(ELFIdent *ident);
+void ELFPrintEHdr(Elf64_Ehdr *ehdr);
 
 #define SHT_NULL            0
 #define SHT_PROGBITS        1

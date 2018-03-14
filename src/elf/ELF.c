@@ -1,5 +1,8 @@
 #include <slink/elf/ELF.h>
 
+#include <stdio.h>
+
+
 int dummy;
 
 char *ELFFileClassName(uint8_t FileClass) {
@@ -317,4 +320,30 @@ char *ELFSpecialSectionName(Elf64_Half index) {
             }
     }
     return 0;
+}
+
+void ELFPrintIdent(ELFIdent *ident) {
+    printf("FileIdent: %u [%.3s]\n", ident->FileIdent[0], &ident->FileIdent[1]);
+    printf("FileClass: %u [%s]\n", ident->FileClass, ELFFileClassName(ident->FileClass));
+    printf("DataEncoding: %u [%s]\n", ident->DataEncoding, ELFDataEncodingName(ident->DataEncoding));
+    printf("FileVersion: %u [%s]\n", ident->FileVersion, ELFVersionName(ident->FileVersion));
+    printf("OSABIIdent: %u [%s]\n", ident->OSABIIdent, ELFOSABIIdentName(ident->OSABIIdent));
+    printf("ABIVersion: %u\n", ident->ABIVersion);
+}
+
+void ELFPrintEHdr(Elf64_Ehdr *ehdr) {
+    // printf("e_ident: %u\n", ehdr->e_ident);
+    printf("e_type: %u [%s]\n", ehdr->e_type, ELFTypeName(ehdr->e_type));
+    printf("e_machine: %u [%s]\n", ehdr->e_machine, ELFMachineName(ehdr->e_machine));
+    printf("e_version: %u [%s]\n", ehdr->e_version, ELFVersionName(ehdr->e_version));
+    printf("e_entry: %lu\n", ehdr->e_entry);
+    printf("e_phoff: %lu\n", ehdr->e_phoff);
+    printf("e_shoff: %lu\n", ehdr->e_shoff);
+    printf("e_flags: %u\n", ehdr->e_flags);
+    printf("e_ehsize: %u\n", ehdr->e_ehsize);
+    printf("e_phentsize: %u\n", ehdr->e_phentsize);
+    printf("e_phnum: %u\n", ehdr->e_phnum);
+    printf("e_shentsize: %u\n", ehdr->e_shentsize);
+    printf("e_shnum: %u\n", ehdr->e_shnum);
+    printf("e_shstrndx: %u\n", ehdr->e_shstrndx);
 }
