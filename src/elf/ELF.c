@@ -242,6 +242,26 @@ char *ELFSectionFlagName(Elf64_Xword sh_flag) {
     return "{invalid section flag}";
 }
 
+Elf64_Word ELF_SPFS[] = {
+    0x1,
+    0x2,
+    0x4,
+    0x0ff00000,
+    0xf0000000,
+};
+int ELF_SPFS_CNT = sizeof(ELF_SPFS) / sizeof(ELF_SPFS[0]);
+
+char *ELFSegmentPermissionFlagName(Elf64_Word p_flags) {
+    switch (p_flags) {
+        case 0x1: return "PF_X";
+        case 0x2: return "PF_W";
+        case 0x4: return "PF_R";
+        case 0x0ff00000: return "SHF_MASKOS";
+        case 0xf0000000: return "SHF_MASKPROC";
+    }
+    return "{invalid section flag}";
+}
+
 char *ELFSymBindingName(unsigned char st_bind) {
     switch (st_bind) {
         case 0: return "STB_LOCAL";
@@ -346,4 +366,42 @@ void ELFPrintEHdr(Elf64_Ehdr *ehdr) {
     printf("e_shentsize: %u\n", ehdr->e_shentsize);
     printf("e_shnum: %u\n", ehdr->e_shnum);
     printf("e_shstrndx: %u\n", ehdr->e_shstrndx);
+}
+
+void ELFPrintPHdr(Elf64_Phdr *phdr) {
+    printf("p_type: 0x%x [%s]\n", phdr->p_type, ELFSegmentTypeName(phdr->p_type));
+    printf("p_flags: %u\n", phdr->p_flags);
+    for (int i = 0; i < ELF_SPFS_CNT; i++) {
+        int mf = ELF_SPFS[i] & phdr->p_flags;
+        if (mf) {
+            printf("    [%s]\n", ELFSegmentPermissionFlagName(mf));
+        }
+    }
+    printf("p_offset: 0x%lx\n", phdr->p_offset);
+    printf("p_vaddr: 0x%lx\n", phdr->p_vaddr);
+    printf("p_paddr: 0x%lx\n", phdr->p_paddr);
+    printf("p_filesz: %lu\n", phdr->p_filesz);
+    printf("p_memsz: %lu\n", phdr->p_memsz);
+    printf("p_align: %lu\n", phdr->p_align);
+}
+
+char *ELFSegmentTypeName(Elf64_Word p_type) {
+    switch (p_type) {
+        case 0: return "PT_NULL";
+        case 1: return "PT_LOAD";
+        case 2: return "PT_DYNAMIC";
+        case 3: return "PT_INTERP";
+        case 4: return "PT_NOTE";
+        case 5: return "PT_SHLIB";
+        case 6: return "PT_PHDR";
+        case 7: return "PT_TLS";
+        default:
+            if (0x60000000 <= p_type && p_type <= 0x6fffffff) {
+                return "OS specific";
+            } else if (0x70000000 <= p_type && p_type <= 0x7fffffff) {
+                return "OS specific";
+            }
+        
+    }
+    return "{invalid segment type}";
 }

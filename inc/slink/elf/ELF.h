@@ -76,6 +76,17 @@ typedef struct {
 	Elf64_Xword    st_size;
 } Elf64_Sym;
 
+typedef struct {
+    Elf64_Word	p_type;
+    Elf64_Word	p_flags;
+    Elf64_Off	p_offset;
+    Elf64_Addr	p_vaddr;
+    Elf64_Addr	p_paddr;
+    Elf64_Xword	p_filesz;
+    Elf64_Xword	p_memsz;
+    Elf64_Xword	p_align;
+} Elf64_Phdr;
+
 char *ELFFileClassName(uint8_t FileClass);
 char *ELFDataEncodingName(uint8_t DataEncoding);
 char *ELFFileVersionName(uint8_t FileVersion);
@@ -98,6 +109,14 @@ char *ELFSymVisibilityName(unsigned char st_other);
 
 void ELFPrintIdent(ELFIdent *ident);
 void ELFPrintEHdr(Elf64_Ehdr *ehdr);
+void ELFPrintPHdr(Elf64_Phdr *phdr);
+
+char *ELFSegmentTypeName(Elf64_Word p_type);
+
+extern Elf64_Word ELF_SPFS[];
+extern int ELF_SPFS_CNT;
+
+char *ELFSegmentPermissionFlagName(Elf64_Word p_flags);
 
 #define SHT_NULL            0
 #define SHT_PROGBITS        1
