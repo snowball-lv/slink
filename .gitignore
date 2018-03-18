@@ -2,4 +2,4 @@
 out/
 bin/
 deps/
-
+.vscode/
