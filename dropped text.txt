@@ -1,0 +1,1 @@
+/home/snowball/Projects/slink/log-sym.txt

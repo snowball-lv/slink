@@ -23,7 +23,8 @@ CFLAGS = [
 ]
 
 LFLAGS = [
-    # "-shared"
+    # "-shared",
+    # "-static",
 ]
 
 SRCS.zip(DEPS, OBJS).each do |src, dep, obj|

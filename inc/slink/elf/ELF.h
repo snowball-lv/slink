@@ -1,6 +1,8 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
+#include <stdio.h>
 
 
 typedef uint16_t Elf64_Half;
@@ -11,6 +13,7 @@ typedef uint64_t Elf64_Xword;
 
 #define EI_NIDENT   16
 #define SHN_UNDEF   0
+#define SHN_XINDEX  0xffff
 #define SHT_NOBITS  8
 #define SHT_SYMTAB  2
 
@@ -87,6 +90,30 @@ typedef struct {
     Elf64_Xword	p_align;
 } Elf64_Phdr;
 
+typedef struct {
+
+    char *path;
+    int index;
+    char *raw;
+
+    Elf64_Ehdr *ehdr;
+
+    Elf64_Xword	shnum;
+    Elf64_Shdr *shdrs;
+    Elf64_Word shstrndx;
+    char *sec_name_str_tab;
+
+    Elf64_Phdr *phdrs;
+
+    Elf64_Shdr *sym_tab_sh;
+    Elf64_Sym *sym_tab;
+    size_t sym_cnt;
+    char *sym_str_tab;
+
+} Elf;
+
+void ELFRead(char *path, Elf *elf);
+
 char *ELFFileClassName(uint8_t FileClass);
 char *ELFDataEncodingName(uint8_t DataEncoding);
 char *ELFFileVersionName(uint8_t FileVersion);
@@ -101,15 +128,18 @@ extern int ELF_SHFS_CNT;
 
 char *ELFSectionTypeName(Elf64_Word sh_type);
 char *ELFSectionFlagName(Elf64_Xword sh_flag);
-char *ELFSpecialSectionName(Elf64_Half index);
+char *ELFSpecialSectionName(Elf64_Word index);
 
 char *ELFSymBindingName(unsigned char st_bind);
 char *ELFSymTypeName(unsigned char st_type);
 char *ELFSymVisibilityName(unsigned char st_other);
 
 void ELFPrintIdent(ELFIdent *ident);
-void ELFPrintEHdr(Elf64_Ehdr *ehdr);
 void ELFPrintPHdr(Elf64_Phdr *phdr);
+
+void ELFPrintEHdr(FILE *file, Elf *elf, Elf64_Ehdr *ehdr);
+void ELFPrintSHdr(FILE *file, Elf *elf, Elf64_Shdr *shdr);
+void ELFPrintSymTab(FILE *file, Elf *elf);
 
 char *ELFSegmentTypeName(Elf64_Word p_type);
 
@@ -154,3 +184,5 @@ char *ELFSegmentPermissionFlagName(Elf64_Word p_flags);
 #define SHF_TLS                 0x400
 #define SHF_MASKOS              0x0ff00000
 #define SHF_MASKPROC            0xf0000000
+
+#define PT_INTERP   3

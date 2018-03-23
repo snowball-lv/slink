@@ -1,0 +1,584 @@
+
+File: 0 [./out/src/main.o]
+st_name: 0 []
+st_info: 0
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 1 [main.c]
+st_info: 4
+st_other: 0
+st_shndx: 65521
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 1
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 3
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 4
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 5
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 8 [__PRETTY_FUNCTION__.2981]
+st_info: 1
+st_other: 0
+st_shndx: 5
+st_value: 144
+st_size: 5
+
+File: 0 [./out/src/main.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 7
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 8
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 6
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 33 [main]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 0
+st_size: 686
+
+File: 0 [./out/src/main.o]
+st_name: 38 [puts]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 43 [fopen]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 49 [__assert_fail]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 63 [printf]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 70 [malloc]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 77 [ELFRead]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 85 [putchar]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 93 [ELFPrintEHdr]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 106 [ELFPrintSHdr]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 119 [ELFPrintSymTab]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 0 [./out/src/main.o]
+st_name: 134 [fclose]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 0 []
+st_info: 0
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 1 [ELF.c]
+st_info: 4
+st_other: 0
+st_shndx: 65521
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 1
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 3
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 4
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 5
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 7 [flength]
+st_info: 2
+st_other: 0
+st_shndx: 1
+st_value: 3603
+st_size: 129
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 15 [__PRETTY_FUNCTION__.3243]
+st_info: 1
+st_other: 0
+st_shndx: 5
+st_value: 4160
+st_size: 8
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 40 [ELFPrintSym]
+st_info: 2
+st_other: 0
+st_shndx: 1
+st_value: 5125
+st_size: 230
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 8
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 9
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 0 []
+st_info: 3
+st_other: 0
+st_shndx: 7
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 52 [dummy]
+st_info: 17
+st_other: 0
+st_shndx: 65522
+st_value: 4
+st_size: 4
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 58 [ELFFileClassName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 0
+st_size: 55
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 75 [ELFDataEncodingName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 55
+st_size: 55
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 95 [ELFFileVersionName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 110
+st_size: 45
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 114 [ELFOSABIIdentName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 155
+st_size: 141
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 132 [ELFTypeName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 296
+st_size: 161
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 144 [ELFMachineName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 457
+st_size: 888
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 159 [ELFVersionName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 1345
+st_size: 42
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 174 [ELFSectionTypeName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 1387
+st_size: 492
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 193 [ELF_SHFS]
+st_info: 17
+st_other: 0
+st_shndx: 3
+st_value: 0
+st_size: 96
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 202 [ELF_SHFS_CNT]
+st_info: 17
+st_other: 0
+st_shndx: 3
+st_value: 96
+st_size: 4
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 215 [ELFSectionFlagName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 1879
+st_size: 227
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 234 [ELF_SPFS]
+st_info: 17
+st_other: 0
+st_shndx: 3
+st_value: 112
+st_size: 20
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 243 [ELF_SPFS_CNT]
+st_info: 17
+st_other: 0
+st_shndx: 3
+st_value: 132
+st_size: 4
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 256 [ELFSegmentPermissionFlagName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 2106
+st_size: 90
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 285 [ELFSymBindingName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 2196
+st_size: 72
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 303 [ELFSymTypeName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 2268
+st_size: 100
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 318 [ELFSymVisibilityName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 2368
+st_size: 76
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 339 [ELFSpecialSectionName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 2444
+st_size: 147
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 361 [ELFPrintIdent]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 2591
+st_size: 274
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 395 [printf]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 375 [ELFPrintEHdr]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 2865
+st_size: 547
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 388 [fputc]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 394 [fprintf]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 402 [ELFPrintPHdr]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 3412
+st_size: 54
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 415 [ELFSegmentTypeName]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 3466
+st_size: 137
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 434 [fgetpos]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 442 [fseek]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 448 [ftell]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 454 [fsetpos]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 462 [__stack_chk_fail]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 479 [ELFRead]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 3732
+st_size: 919
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 487 [fopen]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 493 [__assert_fail]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 507 [malloc]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 514 [fread]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 520 [fclose]
+st_info: 16
+st_other: 0
+st_shndx: 0
+st_value: 0
+st_size: 0
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 527 [ELFPrintSHdr]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 4651
+st_size: 474
+
+File: 1 [./out/src/elf/ELF.o]
+st_name: 540 [ELFPrintSymTab]
+st_info: 18
+st_other: 0
+st_shndx: 1
+st_value: 5355
+st_size: 175

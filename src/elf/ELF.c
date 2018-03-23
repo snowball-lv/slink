@@ -1,7 +1,8 @@
 #include <slink/elf/ELF.h>
 
 #include <stdio.h>
-
+#include <assert.h>
+#include <stdlib.h>
 
 int dummy;
 
@@ -49,7 +50,7 @@ char *ELFOSABIIdentName(uint8_t OSABIIdent) {
         case 14: return "ELFOSABI_NSK";
         
         default:
-            if (64 <= OSABIIdent || OSABIIdent <= 255) {
+            if (64 <= OSABIIdent /* || OSABIIdent <= 255 */) {
                 return "Architecture-specific";
             }
     }
@@ -323,14 +324,14 @@ char *ELFSymVisibilityName(unsigned char st_other) {
     return "{invalid sym visibility}";
 }
 
-char *ELFSpecialSectionName(Elf64_Half index) {
+char *ELFSpecialSectionName(Elf64_Word index) {
     switch (index) {
         case 0:         return "SHN_UNDEF";
         case 0xfff1:    return "SHN_ABS";
         case 0xfff2:    return "SHN_COMMON";
         case 0xffff:    return "SHN_XINDEX";
         default:
-            if (0xff00 <= index && index <= 0xffff) {
+            if (0xff00 <= index /* && index <= 0xffff */) {
                 if (0xff00 <= index && index <= 0xff1f) {
                     return "Proc specific";
                 } else if (0xff20 <= index && index <= 0xff3f) {
@@ -351,38 +352,42 @@ void ELFPrintIdent(ELFIdent *ident) {
     printf("ABIVersion: %u\n", ident->ABIVersion);
 }
 
-void ELFPrintEHdr(Elf64_Ehdr *ehdr) {
+void ELFPrintEHdr(FILE *file, Elf *elf, Elf64_Ehdr *ehdr) {
+
+    fprintf(file, "\n");
+    fprintf(file, "File: %u [%s]\n", elf->index, elf->path);
+
     // printf("e_ident: %u\n", ehdr->e_ident);
-    printf("e_type: %u [%s]\n", ehdr->e_type, ELFTypeName(ehdr->e_type));
-    printf("e_machine: %u [%s]\n", ehdr->e_machine, ELFMachineName(ehdr->e_machine));
-    printf("e_version: %u [%s]\n", ehdr->e_version, ELFVersionName(ehdr->e_version));
-    printf("e_entry: %lu\n", ehdr->e_entry);
-    printf("e_phoff: %lu\n", ehdr->e_phoff);
-    printf("e_shoff: %lu\n", ehdr->e_shoff);
-    printf("e_flags: %u\n", ehdr->e_flags);
-    printf("e_ehsize: %u\n", ehdr->e_ehsize);
-    printf("e_phentsize: %u\n", ehdr->e_phentsize);
-    printf("e_phnum: %u\n", ehdr->e_phnum);
-    printf("e_shentsize: %u\n", ehdr->e_shentsize);
-    printf("e_shnum: %u\n", ehdr->e_shnum);
-    printf("e_shstrndx: %u\n", ehdr->e_shstrndx);
+    fprintf(file, "e_type: %u [%s]\n", ehdr->e_type, ELFTypeName(ehdr->e_type));
+    fprintf(file, "e_machine: %u [%s]\n", ehdr->e_machine, ELFMachineName(ehdr->e_machine));
+    fprintf(file, "e_version: %u [%s]\n", ehdr->e_version, ELFVersionName(ehdr->e_version));
+    fprintf(file, "e_entry: %lu\n", ehdr->e_entry);
+    fprintf(file, "e_phoff: %lu\n", ehdr->e_phoff);
+    fprintf(file, "e_shoff: %lu\n", ehdr->e_shoff);
+    fprintf(file, "e_flags: %u\n", ehdr->e_flags);
+    fprintf(file, "e_ehsize: %u\n", ehdr->e_ehsize);
+    fprintf(file, "e_phentsize: %u\n", ehdr->e_phentsize);
+    fprintf(file, "e_phnum: %u\n", ehdr->e_phnum);
+    fprintf(file, "e_shentsize: %u\n", ehdr->e_shentsize);
+    fprintf(file, "e_shnum: %u\n", ehdr->e_shnum);
+    fprintf(file, "e_shstrndx: %u\n", ehdr->e_shstrndx);
 }
 
 void ELFPrintPHdr(Elf64_Phdr *phdr) {
     printf("p_type: 0x%x [%s]\n", phdr->p_type, ELFSegmentTypeName(phdr->p_type));
-    printf("p_flags: %u\n", phdr->p_flags);
-    for (int i = 0; i < ELF_SPFS_CNT; i++) {
-        int mf = ELF_SPFS[i] & phdr->p_flags;
-        if (mf) {
-            printf("    [%s]\n", ELFSegmentPermissionFlagName(mf));
-        }
-    }
-    printf("p_offset: 0x%lx\n", phdr->p_offset);
-    printf("p_vaddr: 0x%lx\n", phdr->p_vaddr);
-    printf("p_paddr: 0x%lx\n", phdr->p_paddr);
-    printf("p_filesz: %lu\n", phdr->p_filesz);
-    printf("p_memsz: %lu\n", phdr->p_memsz);
-    printf("p_align: %lu\n", phdr->p_align);
+    // printf("p_flags: %u\n", phdr->p_flags);
+    // for (int i = 0; i < ELF_SPFS_CNT; i++) {
+    //     Elf64_Word mf = ELF_SPFS[i] & phdr->p_flags;
+    //     if (mf) {
+    //         printf("    [%s]\n", ELFSegmentPermissionFlagName(mf));
+    //     }
+    // }
+    // printf("p_offset: 0x%lx\n", phdr->p_offset);
+    // printf("p_vaddr: 0x%lx\n", phdr->p_vaddr);
+    // printf("p_paddr: 0x%lx\n", phdr->p_paddr);
+    // printf("p_filesz: %lu\n", phdr->p_filesz);
+    // printf("p_memsz: %lu\n", phdr->p_memsz);
+    // printf("p_align: %lu\n", phdr->p_align);
 }
 
 char *ELFSegmentTypeName(Elf64_Word p_type) {
@@ -399,9 +404,151 @@ char *ELFSegmentTypeName(Elf64_Word p_type) {
             if (0x60000000 <= p_type && p_type <= 0x6fffffff) {
                 return "OS specific";
             } else if (0x70000000 <= p_type && p_type <= 0x7fffffff) {
-                return "OS specific";
+                return "Proc specific";
             }
         
     }
     return "{invalid segment type}";
+}
+
+static long int flength(FILE *file) {
+    fpos_t pos;
+    fgetpos(file, &pos);
+    fseek(file, 0, SEEK_END);
+    long int length = ftell(file);
+    fsetpos(file, &pos);
+    return length;
+}
+
+void ELFRead(char *path, Elf *elf) {
+
+    FILE *in = fopen(path, "rb");
+    assert(in);
+
+    elf->path = path;
+
+    long int length = flength(in);
+    assert(length >= 0);
+    
+    elf->raw = malloc((size_t) length);
+    fread(elf->raw, (size_t) length, 1, in);
+
+    fclose(in);
+
+    // set pointer to elf header
+    elf->ehdr = (Elf64_Ehdr *) elf->raw;
+
+    // find real section count
+    elf->shnum = 0;
+    if (elf->ehdr->e_shoff != 0) {
+        elf->shnum = elf->ehdr->e_shnum;
+        if (elf->shnum == 0) {
+            Elf64_Shdr *shdr = (Elf64_Shdr *) &elf->raw[elf->ehdr->e_shoff];
+            elf->shnum = shdr->sh_size;
+        }
+    }
+
+    // find section headers
+    elf->shdrs = 0;
+    if (elf->shnum > 0) {
+
+        // set pointer to section header table
+        assert(elf->ehdr->e_shentsize == sizeof(Elf64_Shdr));
+        elf->shdrs = (Elf64_Shdr *) &elf->raw[elf->ehdr->e_shoff];
+    }
+
+    // find program headers
+    elf->phdrs = 0;
+    if (elf->ehdr->e_phnum > 0) {
+
+        // set pointer to program header table
+        assert(elf->ehdr->e_phentsize == sizeof(Elf64_Phdr));
+        elf->phdrs = (Elf64_Phdr *) &elf->raw[elf->ehdr->e_phoff];
+    }
+
+    // find real section name string table index
+    elf->shstrndx = elf->ehdr->e_shstrndx;
+    if (elf->shstrndx == SHN_XINDEX) {
+        Elf64_Shdr *shdr = &elf->shdrs[0];
+        elf->shstrndx = shdr->sh_link;
+    }
+
+    // set section name string table pointer
+    elf->sec_name_str_tab = 0;
+    if (elf->shstrndx != SHN_UNDEF) {
+        Elf64_Shdr *shdr = &elf->shdrs[elf->shstrndx];
+        elf->sec_name_str_tab = &elf->raw[shdr->sh_offset];
+    }
+
+    // set poitner to symtab
+    elf->sym_tab = 0;
+    for (size_t i = 0; i < elf->shnum; i++) {
+        Elf64_Shdr *shdr = &elf->shdrs[i];
+        if (shdr->sh_type == SHT_SYMTAB) {
+
+            assert(shdr->sh_entsize == sizeof(Elf64_Sym));
+
+            elf->sym_tab_sh = shdr;
+            elf->sym_tab = (Elf64_Sym *) &elf->raw[shdr->sh_offset];
+            elf->sym_cnt = shdr->sh_size / shdr->sh_entsize;
+
+            Elf64_Shdr *strsh = &elf->shdrs[shdr->sh_link];
+            elf->sym_str_tab = &elf->raw[strsh->sh_offset];
+        }
+    }
+}
+
+void ELFPrintSHdr(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
+    
+    fprintf(file, "\n");
+    fprintf(file, "File: %u [%s]\n", elf->index, elf->path);
+
+    fprintf(file, "sh_name: %u", shdr->sh_name);
+    char *sec_name = ELFSpecialSectionName(shdr->sh_name);
+    if (sec_name == 0 && elf->sec_name_str_tab != 0) {
+        sec_name = &elf->sec_name_str_tab[shdr->sh_name];
+    }
+    fprintf(file, " [%s]\n", sec_name ? sec_name : "?");
+
+    fprintf(file, "sh_type: %u\n", shdr->sh_type);
+    fprintf(file, "sh_flags: %lu\n", shdr->sh_flags);
+    fprintf(file, "sh_addr: %lu\n", shdr->sh_addr);
+    fprintf(file, "sh_offset: %lu\n", shdr->sh_offset);
+    fprintf(file, "sh_size: %lu\n", shdr->sh_size);
+    fprintf(file, "sh_link: %u\n", shdr->sh_link);
+    fprintf(file, "sh_info: %u\n", shdr->sh_info);
+    fprintf(file, "sh_addralign: %lu\n", shdr->sh_addralign);
+    fprintf(file, "sh_entsize: %lu\n", shdr->sh_entsize);
+}
+
+static void ELFPrintSym(FILE *file, Elf *elf, Elf64_Sym *sym) {
+    
+    fprintf(
+        file,
+        "st_name: %u [%s]\n",
+        sym->st_name,
+        &elf->sym_str_tab[sym->st_name]);
+        
+    // fprintf(file, "st_name: %u\n", sym->st_name);
+    fprintf(file, "st_info: %u\n", sym->st_info);
+    fprintf(file, "st_other: %u\n", sym->st_other);
+    fprintf(file, "st_shndx: %u\n", sym->st_shndx);
+    fprintf(file, "st_value: %lu\n", sym->st_value);
+    fprintf(file, "st_size: %lu\n", sym->st_size);
+}
+
+void ELFPrintSymTab(FILE *file, Elf *elf) {
+    
+    if (elf->sym_tab == 0) {
+        return;
+    }
+
+    for (size_t i = 0; i < elf->sym_cnt; i++) {
+
+        fprintf(file, "\n");
+        fprintf(file, "File: %u [%s]\n", elf->index, elf->path);
+
+        Elf64_Sym *sym = &elf->sym_tab[i];
+        ELFPrintSym(file, elf, sym);
+    }
 }
