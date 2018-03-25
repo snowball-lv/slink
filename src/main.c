@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <stddef.h>
 #include <slink/elf/ELF.h>
@@ -47,8 +48,11 @@ static int sec_order_compar(const void *p1, const void *p2) {
     char *na = &elfa->sec_name_str_tab[a->sh_name];
     char *nb = &elfb->sec_name_str_tab[b->sh_name];
 
-    return strcmp(na, nb);
-    // return 0;
+    if (strcmp(na, nb) != 0) {
+        return strcmp(na, nb);
+    }
+
+    return elfa->index - elfb->index;
 }
 
 static void OrderSecList(SecRef *list, size_t length) {
