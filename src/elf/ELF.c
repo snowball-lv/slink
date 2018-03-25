@@ -548,12 +548,14 @@ void ELFPrintSHdr(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
 
     fprintf(
         file, 
-        "%u [%s] [%s] [%s] 0x%lx",
+        "%u [%s] [%s] [%s] %lu 0x%lx 0x%lx",
         elf->index,
         path,
         &elf->sec_name_str_tab[shdr->sh_name],
         ELFSectionTypeName(shdr->sh_type),
-        shdr->sh_flags);
+        shdr->sh_size,
+        shdr->sh_addralign,
+        shdr->sh_addr);
 
     for (int i = 0; i < ELF_SHFS_CNT; i++) {
         Elf64_Xword m = shdr->sh_flags & ELF_SHFS[i];

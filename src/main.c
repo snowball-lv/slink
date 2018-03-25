@@ -59,6 +59,28 @@ static void OrderSecList(SecRef *list, size_t length) {
     qsort(list, length, sizeof(SecRef), sec_order_compar);
 }
 
+static void AssignSecAddresses(SecRef *list, size_t length, size_t base) {
+
+    size_t addr = base;
+
+    for (size_t i = 0 ; i < length; i++) {
+
+        SecRef *ref = &list[i];
+        Elf64_Shdr *shdr = ref->shdr;
+        assert((shdr->sh_addr == 0) && "Can't handle non 0 base sections.");
+
+        if (shdr->sh_addralign > 1) {
+            if ((addr % shdr->sh_addralign) != 0) {
+                addr += shdr->sh_addralign;
+                addr = (addr / shdr->sh_addralign) * shdr->sh_addralign;
+            }
+        }
+
+        shdr->sh_addr = addr;
+        addr += shdr->sh_size;
+    }
+}
+
 int main(int argc, char **argv) {
     printf("--- S LINK ---\n");
     
@@ -112,6 +134,7 @@ int main(int argc, char **argv) {
     }
 
     OrderSecList(sec_list, sec_cnt);
+    AssignSecAddresses(sec_list, sec_cnt, 0);
 
     for (size_t i = 0; i < sec_cnt; i++) {
         SecRef *ref = &sec_list[i];
