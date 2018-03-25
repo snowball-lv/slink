@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include <stdlib.h>
 
 int dummy;
@@ -498,57 +499,68 @@ void ELFRead(char *path, Elf *elf) {
     }
 }
 
-void ELFPrintSHdr(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
-    
-    fprintf(file, "\n");
-    fprintf(file, "File: %u [%s]\n", elf->index, elf->path);
-
-    fprintf(file, "sh_name: %u", shdr->sh_name);
-    char *sec_name = ELFSpecialSectionName(shdr->sh_name);
-    if (sec_name == 0 && elf->sec_name_str_tab != 0) {
-        sec_name = &elf->sec_name_str_tab[shdr->sh_name];
-    }
-    fprintf(file, " [%s]\n", sec_name ? sec_name : "?");
-
-    fprintf(file, "sh_type: %u\n", shdr->sh_type);
-    fprintf(file, "sh_flags: %lu\n", shdr->sh_flags);
-    fprintf(file, "sh_addr: %lu\n", shdr->sh_addr);
-    fprintf(file, "sh_offset: %lu\n", shdr->sh_offset);
-    fprintf(file, "sh_size: %lu\n", shdr->sh_size);
-    fprintf(file, "sh_link: %u\n", shdr->sh_link);
-    fprintf(file, "sh_info: %u\n", shdr->sh_info);
-    fprintf(file, "sh_addralign: %lu\n", shdr->sh_addralign);
-    fprintf(file, "sh_entsize: %lu\n", shdr->sh_entsize);
-}
-
-static void ELFPrintSym(FILE *file, Elf *elf, Elf64_Sym *sym) {
-    
-    fprintf(
-        file,
-        "st_name: %u [%s]\n",
-        sym->st_name,
-        &elf->sym_str_tab[sym->st_name]);
-        
-    // fprintf(file, "st_name: %u\n", sym->st_name);
-    fprintf(file, "st_info: %u\n", sym->st_info);
-    fprintf(file, "st_other: %u\n", sym->st_other);
-    fprintf(file, "st_shndx: %u\n", sym->st_shndx);
-    fprintf(file, "st_value: %lu\n", sym->st_value);
-    fprintf(file, "st_size: %lu\n", sym->st_size);
-}
-
 void ELFPrintSymTab(FILE *file, Elf *elf) {
     
     if (elf->sym_tab == 0) {
         return;
     }
 
+    char *path = strrchr(elf->path, '/') + 1;
+    if (path == 0) {
+        path = elf->path;
+    }
+
+    fprintf(file, "\n");
     for (size_t i = 0; i < elf->sym_cnt; i++) {
 
-        fprintf(file, "\n");
-        fprintf(file, "File: %u [%s]\n", elf->index, elf->path);
-
         Elf64_Sym *sym = &elf->sym_tab[i];
-        ELFPrintSym(file, elf, sym);
+
+        char *sec_name = ELFSpecialSectionName(sym->st_shndx);
+        if (sec_name == 0) {
+            Elf64_Shdr *shdr = &elf->shdrs[sym->st_shndx];
+            sec_name = &elf->sec_name_str_tab[shdr->sh_name];
+        }
+
+        fprintf(
+            file,
+            "%u [%s] [%s] [%s] 0x%lx\n",
+            elf->index,
+            path,
+            &elf->sym_str_tab[sym->st_name],
+            sec_name,
+            sym->st_value);
     }
+}
+
+void ELFPrintStrTab(FILE *file, Elf *elf) {
+
+    fprintf(file, "\n");
+    fprintf(file, "File: %u [%s]\n", elf->index, elf->path);
+}
+
+
+void ELFPrintSHdr(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
+    
+    char *path = strrchr(elf->path, '/') + 1;
+    if (path == 0) {
+        path = elf->path;
+    }
+
+    fprintf(
+        file, 
+        "%u [%s] [%s] [%s] 0x%lx",
+        elf->index,
+        path,
+        &elf->sec_name_str_tab[shdr->sh_name],
+        ELFSectionTypeName(shdr->sh_type),
+        shdr->sh_flags);
+
+    for (int i = 0; i < ELF_SHFS_CNT; i++) {
+        Elf64_Xword m = shdr->sh_flags & ELF_SHFS[i];
+        if (m != 0) {
+            fprintf(file, " [%s]", ELFSectionFlagName(m));
+        }
+    }
+
+    fprintf(file, "\n");
 }

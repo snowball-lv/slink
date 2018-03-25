@@ -12,8 +12,12 @@ typedef uint64_t Elf64_Off;
 typedef uint64_t Elf64_Xword;
 
 #define EI_NIDENT   16
+
 #define SHN_UNDEF   0
 #define SHN_XINDEX  0xffff
+#define SHN_ABS     0xfff1
+#define SHN_COMMON  0xfff2
+
 #define SHT_NOBITS  8
 #define SHT_SYMTAB  2
 
@@ -140,6 +144,7 @@ void ELFPrintPHdr(Elf64_Phdr *phdr);
 void ELFPrintEHdr(FILE *file, Elf *elf, Elf64_Ehdr *ehdr);
 void ELFPrintSHdr(FILE *file, Elf *elf, Elf64_Shdr *shdr);
 void ELFPrintSymTab(FILE *file, Elf *elf);
+void ELFPrintStrTab(FILE *file, Elf *elf);
 
 char *ELFSegmentTypeName(Elf64_Word p_type);
 
