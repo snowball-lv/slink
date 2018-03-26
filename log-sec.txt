@@ -1,20 +1,20 @@
 
 0 [main.o] [] [SHT_NULL] 0 0x0 0x0
-0 [main.o] [.text] [SHT_PROGBITS] 1760 0x1 0x0 [SHF_ALLOC] [SHF_EXECINSTR]
-0 [main.o] [.rela.text] [SHT_RELA] 1104 0x8 0x0 [SHF_INFO_LINK]
+0 [main.o] [.text] [SHT_PROGBITS] 2349 0x1 0x0 [SHF_ALLOC] [SHF_EXECINSTR]
+0 [main.o] [.rela.text] [SHT_RELA] 1440 0x8 0x0 [SHF_INFO_LINK]
 0 [main.o] [.data] [SHT_PROGBITS] 0 0x1 0x0 [SHF_WRITE] [SHF_ALLOC]
 0 [main.o] [.bss] [SHT_NOBITS] 0 0x1 0x0 [SHF_WRITE] [SHF_ALLOC]
-0 [main.o] [.rodata] [SHT_PROGBITS] 232 0x10 0x0 [SHF_ALLOC]
+0 [main.o] [.rodata] [SHT_PROGBITS] 280 0x10 0x0 [SHF_ALLOC]
 0 [main.o] [.comment] [SHT_PROGBITS] 53 0x1 0x0 [SHF_MERGE] [SHF_STRINGS]
 0 [main.o] [.note.GNU-stack] [SHT_PROGBITS] 0 0x1 0x0
-0 [main.o] [.eh_frame] [SHT_PROGBITS] 152 0x8 0x0 [SHF_ALLOC]
-0 [main.o] [.rela.eh_frame] [SHT_RELA] 96 0x8 0x0 [SHF_INFO_LINK]
+0 [main.o] [.eh_frame] [SHT_PROGBITS] 184 0x8 0x0 [SHF_ALLOC]
+0 [main.o] [.rela.eh_frame] [SHT_RELA] 120 0x8 0x0 [SHF_INFO_LINK]
 0 [main.o] [.shstrtab] [SHT_STRTAB] 97 0x1 0x0
-0 [main.o] [.symtab] [SHT_SYMTAB] 672 0x8 0x0
-0 [main.o] [.strtab] [SHT_STRTAB] 221 0x1 0x0
+0 [main.o] [.symtab] [SHT_SYMTAB] 792 0x8 0x0
+0 [main.o] [.strtab] [SHT_STRTAB] 283 0x1 0x0
 
 1 [ELF.o] [] [SHT_NULL] 0 0x0 0x0
-1 [ELF.o] [.text] [SHT_PROGBITS] 5360 0x1 0x0 [SHF_ALLOC] [SHF_EXECINSTR]
+1 [ELF.o] [.text] [SHT_PROGBITS] 5430 0x1 0x0 [SHF_ALLOC] [SHF_EXECINSTR]
 1 [ELF.o] [.rela.text] [SHT_RELA] 7488 0x8 0x0 [SHF_INFO_LINK]
 1 [ELF.o] [.data] [SHT_PROGBITS] 136 0x20 0x0 [SHF_WRITE] [SHF_ALLOC]
 1 [ELF.o] [.bss] [SHT_NOBITS] 0 0x1 0x0 [SHF_WRITE] [SHF_ALLOC]
@@ -22,8 +22,8 @@
 1 [ELF.o] [.rela.rodata] [SHT_RELA] 3744 0x8 0x0 [SHF_INFO_LINK]
 1 [ELF.o] [.comment] [SHT_PROGBITS] 53 0x1 0x0 [SHF_MERGE] [SHF_STRINGS]
 1 [ELF.o] [.note.GNU-stack] [SHT_PROGBITS] 0 0x1 0x0
-1 [ELF.o] [.eh_frame] [SHT_PROGBITS] 768 0x8 0x0 [SHF_ALLOC]
-1 [ELF.o] [.rela.eh_frame] [SHT_RELA] 552 0x8 0x0 [SHF_INFO_LINK]
+1 [ELF.o] [.eh_frame] [SHT_PROGBITS] 800 0x8 0x0 [SHF_ALLOC]
+1 [ELF.o] [.rela.eh_frame] [SHT_RELA] 576 0x8 0x0 [SHF_INFO_LINK]
 1 [ELF.o] [.shstrtab] [SHT_STRTAB] 102 0x1 0x0
-1 [ELF.o] [.symtab] [SHT_SYMTAB] 1248 0x8 0x0
-1 [ELF.o] [.strtab] [SHT_STRTAB] 566 0x1 0x0
+1 [ELF.o] [.symtab] [SHT_SYMTAB] 1272 0x8 0x0
+1 [ELF.o] [.strtab] [SHT_STRTAB] 584 0x1 0x0

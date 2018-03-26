@@ -344,6 +344,31 @@ char *ELFSpecialSectionName(Elf64_Word index) {
     return 0;
 }
 
+int ELFIsShNdxSpecial(Elf64_Half index) {
+    switch (index) {
+
+        case 0:         /* return "SHN_UNDEF"; */
+        case 0xfff1:    /* return "SHN_ABS"; */
+        case 0xfff2:    /* return "SHN_COMMON"; */
+        case 0xffff:    /* return "SHN_XINDEX"; */
+            return 1;
+
+        default:
+            if (0xff00 <= index /* && index <= 0xffff */) {
+
+                // if (0xff00 <= index && index <= 0xff1f) {
+                //     return "Proc specific";
+                // } else if (0xff20 <= index && index <= 0xff3f) {
+                //     return "OS specific";
+                // }
+                // return "Reserved";
+
+                return 1;
+            }
+    }
+    return 0;
+}
+
 void ELFPrintIdent(ELFIdent *ident) {
     printf("FileIdent: %u [%.3s]\n", ident->FileIdent[0], &ident->FileIdent[1]);
     printf("FileClass: %u [%s]\n", ident->FileClass, ELFFileClassName(ident->FileClass));

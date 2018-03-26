@@ -153,6 +153,8 @@ extern int ELF_SPFS_CNT;
 
 char *ELFSegmentPermissionFlagName(Elf64_Word p_flags);
 
+int ELFIsShNdxSpecial(Elf64_Half index);
+
 #define SHT_NULL            0
 #define SHT_PROGBITS        1
 #define SHT_SYMTAB          2

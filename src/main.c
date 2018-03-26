@@ -81,16 +81,46 @@ static void AssignSecAddresses(SecRef *list, size_t length, size_t base) {
     }
 }
 
+static void LayOutSymbols(Elf *elf) {
+    for (size_t i = 0; i < elf->sym_cnt; i++) {
+        
+        Elf64_Sym *sym = &elf->sym_tab[i];
+        char *name = &elf->sym_str_tab[sym->st_name];
+        // printf("[%s]\n", name);
+
+        if (ELFIsShNdxSpecial(sym->st_shndx)) {
+
+            switch (sym->st_shndx) {
+                case SHN_ABS: break;
+                case SHN_UNDEF: break;
+                default:
+                    fprintf(
+                        stderr,
+                        "Can't handle shndx: [%s]\n",
+                        ELFSpecialSectionName(sym->st_shndx));
+            }
+
+        } else {
+
+            Elf64_Shdr *shdr = &elf->shdrs[sym->st_shndx];
+            sym->st_value += shdr->sh_addr;
+
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     printf("--- S LINK ---\n");
     
     FILE *log_sec = fopen("log-sec.txt", "wb");
     FILE *log_sym = fopen("log-sym.txt", "wb");
     FILE *log_sec_order = fopen("log-sec-order.txt", "wb");
+    FILE *log_sym_linked = fopen("log-sym-linked.txt", "wb");
 
     assert(log_sec);
     assert(log_sym);
     assert(log_sec_order);
+    assert(log_sym_linked);
 
     printf("Inputs: %i\n", argc - 1);
 
@@ -141,9 +171,20 @@ int main(int argc, char **argv) {
         ELFPrintSHdr(log_sec_order, ref->elf, ref->shdr);
     }
 
+    for (int i = 1; i < argc; i++) {
+        Elf *elf = &elfs[i - 1];
+        LayOutSymbols(elf);
+    }
+
+    for (int i = 1; i < argc; i++) {
+        Elf *elf = &elfs[i - 1];
+        ELFPrintSymTab(log_sym_linked, elf);
+    }
+
     fclose(log_sec);
     fclose(log_sym);
     fclose(log_sec_order);
+    fclose(log_sym_linked);
 
     return 0;
 }
