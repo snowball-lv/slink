@@ -10,6 +10,7 @@ typedef uint32_t Elf64_Word;
 typedef uint64_t Elf64_Addr;
 typedef uint64_t Elf64_Off;
 typedef uint64_t Elf64_Xword;
+typedef int64_t Elf64_Sxword;
 
 #define EI_NIDENT   16
 
@@ -31,6 +32,9 @@ typedef uint64_t Elf64_Xword;
 #define ELF64_ST_BIND(i)        ((i)>>4)
 #define ELF64_ST_TYPE(i)        ((i)&0xf)
 #define ELF64_ST_VISIBILITY(o)  ((o)&0x3)
+
+#define ELF64_R_SYM(i)    ((i)>>32)
+#define ELF64_R_TYPE(i)   ((i)&0xffffffffL)
 
 typedef union {
     struct {
@@ -95,6 +99,12 @@ typedef struct {
 } Elf64_Phdr;
 
 typedef struct {
+    Elf64_Addr	    r_offset;
+    Elf64_Xword	    r_info;
+    Elf64_Sxword	r_addend;
+} Elf64_Rela;
+
+typedef struct {
 
     char *path;
     int index;
@@ -145,6 +155,7 @@ void ELFPrintEHdr(FILE *file, Elf *elf, Elf64_Ehdr *ehdr);
 void ELFPrintSHdr(FILE *file, Elf *elf, Elf64_Shdr *shdr);
 void ELFPrintSymTab(FILE *file, Elf *elf);
 void ELFPrintStrTab(FILE *file, Elf *elf);
+void ELFPrintRelocs(FILE *file, Elf *elf, Elf64_Shdr *shdr);
 
 char *ELFSegmentTypeName(Elf64_Word p_type);
 

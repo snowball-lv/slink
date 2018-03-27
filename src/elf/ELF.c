@@ -591,3 +591,44 @@ void ELFPrintSHdr(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
 
     fprintf(file, "\n");
 }
+
+static char *RelocTypeName(size_t type) {
+    switch (type) {
+        case 1: return "R_X86_64_64";
+        case 2: return "R_X86_64_PC32";
+        case 10: return "R_X86_64_32";
+        case 11: return "R_X86_64_32S";
+    }
+    fprintf(stderr, "Can't handle reloc type: %lu\n", type);
+    return "{unknown reloc type}";
+}
+
+void ELFPrintRelocs(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
+
+    assert(shdr->sh_type == SHT_RELA);
+
+    char *path = strrchr(elf->path, '/') + 1;
+    if (path == 0) {
+        path = elf->path;
+    }
+
+    for (size_t off = 0; off < shdr->sh_size; off += shdr->sh_entsize) {
+
+        Elf64_Rela *reloc = (Elf64_Rela *) &elf->raw[shdr->sh_offset + off];
+
+        Elf64_Sym *sym = &elf->sym_tab[ELF64_R_SYM(reloc->r_info)];
+        char *sym_name = &elf->sym_str_tab[sym->st_name];
+
+        fprintf(
+            file, 
+            "[%s] [%s] %lu [%s] %lu [%s]\n", 
+            path,
+            &elf->sec_name_str_tab[shdr->sh_name],
+            // reloc->r_offset,
+            // reloc->r_addend,
+            ELF64_R_SYM(reloc->r_info),
+            sym_name,
+            ELF64_R_TYPE(reloc->r_info),
+            RelocTypeName(ELF64_R_TYPE(reloc->r_info)));
+    }
+}

@@ -1,27 +1,27 @@
-0 [main.o] [.text] [SHT_PROGBITS] 2349 0x1 0x0 [SHF_ALLOC] [SHF_EXECINSTR]
-1 [ELF.o] [.text] [SHT_PROGBITS] 5430 0x1 0x92d [SHF_ALLOC] [SHF_EXECINSTR]
-0 [main.o] [.eh_frame] [SHT_PROGBITS] 184 0x8 0x1e68 [SHF_ALLOC]
-1 [ELF.o] [.eh_frame] [SHT_PROGBITS] 800 0x8 0x1f20 [SHF_ALLOC]
-0 [main.o] [.rodata] [SHT_PROGBITS] 280 0x10 0x2240 [SHF_ALLOC]
-1 [ELF.o] [.rodata] [SHT_PROGBITS] 3984 0x8 0x2358 [SHF_ALLOC]
-0 [main.o] [.data] [SHT_PROGBITS] 0 0x1 0x32e8 [SHF_WRITE] [SHF_ALLOC]
-1 [ELF.o] [.data] [SHT_PROGBITS] 136 0x20 0x3300 [SHF_WRITE] [SHF_ALLOC]
-0 [main.o] [.bss] [SHT_NOBITS] 0 0x1 0x3388 [SHF_WRITE] [SHF_ALLOC]
-1 [ELF.o] [.bss] [SHT_NOBITS] 0 0x1 0x3388 [SHF_WRITE] [SHF_ALLOC]
-0 [main.o] [.comment] [SHT_PROGBITS] 53 0x1 0x3388 [SHF_MERGE] [SHF_STRINGS]
-1 [ELF.o] [.comment] [SHT_PROGBITS] 53 0x1 0x33bd [SHF_MERGE] [SHF_STRINGS]
-0 [main.o] [.note.GNU-stack] [SHT_PROGBITS] 0 0x1 0x33f2
-1 [ELF.o] [.note.GNU-stack] [SHT_PROGBITS] 0 0x1 0x33f2
-0 [main.o] [] [SHT_NULL] 0 0x0 0x33f2
-1 [ELF.o] [] [SHT_NULL] 0 0x0 0x33f2
-0 [main.o] [.rela.eh_frame] [SHT_RELA] 120 0x8 0x33f8 [SHF_INFO_LINK]
-1 [ELF.o] [.rela.eh_frame] [SHT_RELA] 576 0x8 0x3470 [SHF_INFO_LINK]
-1 [ELF.o] [.rela.rodata] [SHT_RELA] 3744 0x8 0x36b0 [SHF_INFO_LINK]
-0 [main.o] [.rela.text] [SHT_RELA] 1440 0x8 0x4550 [SHF_INFO_LINK]
-1 [ELF.o] [.rela.text] [SHT_RELA] 7488 0x8 0x4af0 [SHF_INFO_LINK]
-0 [main.o] [.shstrtab] [SHT_STRTAB] 97 0x1 0x6830
-1 [ELF.o] [.shstrtab] [SHT_STRTAB] 102 0x1 0x6891
-0 [main.o] [.strtab] [SHT_STRTAB] 283 0x1 0x68f7
-1 [ELF.o] [.strtab] [SHT_STRTAB] 584 0x1 0x6a12
-0 [main.o] [.symtab] [SHT_SYMTAB] 792 0x8 0x6c60
-1 [ELF.o] [.symtab] [SHT_SYMTAB] 1272 0x8 0x6f78
+0 [main.o] [.text] [SHT_PROGBITS] 2708 0x1 0x0 [SHF_ALLOC] [SHF_EXECINSTR]
+1 [ELF.o] [.text] [SHT_PROGBITS] 5900 0x1 0xa94 [SHF_ALLOC] [SHF_EXECINSTR]
+0 [main.o] [.eh_frame] [SHT_PROGBITS] 184 0x8 0x21a0 [SHF_ALLOC]
+1 [ELF.o] [.eh_frame] [SHT_PROGBITS] 864 0x8 0x2258 [SHF_ALLOC]
+0 [main.o] [.rodata] [SHT_PROGBITS] 328 0x10 0x25c0 [SHF_ALLOC]
+1 [ELF.o] [.rodata] [SHT_PROGBITS] 4159 0x8 0x2708 [SHF_ALLOC]
+0 [main.o] [.data] [SHT_PROGBITS] 0 0x1 0x3747 [SHF_WRITE] [SHF_ALLOC]
+1 [ELF.o] [.data] [SHT_PROGBITS] 136 0x20 0x3760 [SHF_WRITE] [SHF_ALLOC]
+0 [main.o] [.bss] [SHT_NOBITS] 0 0x1 0x37e8 [SHF_WRITE] [SHF_ALLOC]
+1 [ELF.o] [.bss] [SHT_NOBITS] 0 0x1 0x37e8 [SHF_WRITE] [SHF_ALLOC]
+0 [main.o] [.comment] [SHT_PROGBITS] 53 0x1 0x37e8 [SHF_MERGE] [SHF_STRINGS]
+1 [ELF.o] [.comment] [SHT_PROGBITS] 53 0x1 0x381d [SHF_MERGE] [SHF_STRINGS]
+0 [main.o] [.note.GNU-stack] [SHT_PROGBITS] 0 0x1 0x3852
+1 [ELF.o] [.note.GNU-stack] [SHT_PROGBITS] 0 0x1 0x3852
+0 [main.o] [] [SHT_NULL] 0 0x0 0x3852
+1 [ELF.o] [] [SHT_NULL] 0 0x0 0x3852
+0 [main.o] [.rela.eh_frame] [SHT_RELA] 120 0x8 0x3858 [SHF_INFO_LINK]
+1 [ELF.o] [.rela.eh_frame] [SHT_RELA] 624 0x8 0x38d0 [SHF_INFO_LINK]
+1 [ELF.o] [.rela.rodata] [SHT_RELA] 3744 0x8 0x3b40 [SHF_INFO_LINK]
+0 [main.o] [.rela.text] [SHT_RELA] 1776 0x8 0x49e0 [SHF_INFO_LINK]
+1 [ELF.o] [.rela.text] [SHT_RELA] 7848 0x8 0x50d0 [SHF_INFO_LINK]
+0 [main.o] [.shstrtab] [SHT_STRTAB] 97 0x1 0x6f78
+1 [ELF.o] [.shstrtab] [SHT_STRTAB] 102 0x1 0x6fd9
+0 [main.o] [.strtab] [SHT_STRTAB] 317 0x1 0x703f
+1 [ELF.o] [.strtab] [SHT_STRTAB] 645 0x1 0x717c
+0 [main.o] [.symtab] [SHT_SYMTAB] 840 0x8 0x7408
+1 [ELF.o] [.symtab] [SHT_SYMTAB] 1368 0x8 0x7750

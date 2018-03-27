@@ -116,11 +116,13 @@ int main(int argc, char **argv) {
     FILE *log_sym = fopen("log-sym.txt", "wb");
     FILE *log_sec_order = fopen("log-sec-order.txt", "wb");
     FILE *log_sym_linked = fopen("log-sym-linked.txt", "wb");
+    FILE *log_rel = fopen("log-rel.txt", "wb");
 
     assert(log_sec);
     assert(log_sym);
     assert(log_sec_order);
     assert(log_sym_linked);
+    assert(log_rel);
 
     printf("Inputs: %i\n", argc - 1);
 
@@ -181,10 +183,36 @@ int main(int argc, char **argv) {
         ELFPrintSymTab(log_sym_linked, elf);
     }
 
+    for (int i = 1; i < argc; i++) {
+
+        Elf *elf = &elfs[i - 1];
+
+        for (size_t k = 0; k < elf->shnum; k++) {
+
+            Elf64_Shdr *shdr = &elf->shdrs[k];
+
+            switch (shdr->sh_type) {
+
+                case SHT_REL:
+                    fprintf(
+                        stderr,
+                        "Can't handle type: [%s]\n",
+                        ELFSectionTypeName(shdr->sh_type));
+                    break;
+
+                case SHT_RELA:
+                    fprintf(log_rel, "\n");
+                    ELFPrintRelocs(log_rel, elf, shdr);
+                    break;
+            }
+        }
+    }
+
     fclose(log_sec);
     fclose(log_sym);
     fclose(log_sec_order);
     fclose(log_sym_linked);
+    fclose(log_rel);
 
     return 0;
 }
