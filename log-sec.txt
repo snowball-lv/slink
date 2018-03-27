@@ -25,5 +25,5 @@
 1 [ELF.o] [.eh_frame] [SHT_PROGBITS] 864 0x8 0x0 [SHF_ALLOC]
 1 [ELF.o] [.rela.eh_frame] [SHT_RELA] 624 0x8 0x0 [SHF_INFO_LINK]
 1 [ELF.o] [.shstrtab] [SHT_STRTAB] 102 0x1 0x0
-1 [ELF.o] [.symtab] [SHT_SYMTAB] 1368 0x8 0x0
-1 [ELF.o] [.strtab] [SHT_STRTAB] 645 0x1 0x0
+1 [ELF.o] [.symtab] [SHT_SYMTAB] 1344 0x8 0x0
+1 [ELF.o] [.strtab] [SHT_STRTAB] 639 0x1 0x0

@@ -5,7 +5,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-int dummy;
 
 char *ELFFileClassName(uint8_t FileClass) {
     switch (FileClass) {

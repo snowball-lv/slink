@@ -42,13 +42,12 @@
 1 [ELF.o] [] [.bss] 0x0
 1 [ELF.o] [] [.rodata] 0x0
 1 [ELF.o] [flength] [.text] 0xe59
-1 [ELF.o] [__PRETTY_FUNCTION__.3433] [.rodata] 0x1028
+1 [ELF.o] [__PRETTY_FUNCTION__.3432] [.rodata] 0x1028
 1 [ELF.o] [RelocTypeName] [.text] 0x1536
-1 [ELF.o] [__PRETTY_FUNCTION__.3483] [.rodata] 0x1030
+1 [ELF.o] [__PRETTY_FUNCTION__.3482] [.rodata] 0x1030
 1 [ELF.o] [] [.note.GNU-stack] 0x0
 1 [ELF.o] [] [.eh_frame] 0x0
 1 [ELF.o] [] [.comment] 0x0
-1 [ELF.o] [dummy] [SHN_COMMON] 0x4
 1 [ELF.o] [ELFFileClassName] [.text] 0x0
 1 [ELF.o] [ELFDataEncodingName] [.text] 0x37
 1 [ELF.o] [ELFFileVersionName] [.text] 0x6e

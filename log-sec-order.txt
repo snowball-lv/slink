@@ -22,6 +22,6 @@
 0 [main.o] [.shstrtab] [SHT_STRTAB] 97 0x1 0x6f78
 1 [ELF.o] [.shstrtab] [SHT_STRTAB] 102 0x1 0x6fd9
 0 [main.o] [.strtab] [SHT_STRTAB] 317 0x1 0x703f
-1 [ELF.o] [.strtab] [SHT_STRTAB] 645 0x1 0x717c
-0 [main.o] [.symtab] [SHT_SYMTAB] 840 0x8 0x7408
-1 [ELF.o] [.symtab] [SHT_SYMTAB] 1368 0x8 0x7750
+1 [ELF.o] [.strtab] [SHT_STRTAB] 639 0x1 0x717c
+0 [main.o] [.symtab] [SHT_SYMTAB] 840 0x8 0x7400
+1 [ELF.o] [.symtab] [SHT_SYMTAB] 1344 0x8 0x7748
