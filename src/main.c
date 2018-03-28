@@ -85,7 +85,7 @@ static void LayOutSymbols(Elf *elf) {
     for (size_t i = 0; i < elf->sym_cnt; i++) {
         
         Elf64_Sym *sym = &elf->sym_tab[i];
-        char *name = &elf->sym_str_tab[sym->st_name];
+        // char *name = &elf->sym_str_tab[sym->st_name];
         // printf("[%s]\n", name);
 
         if (ELFIsShNdxSpecial(sym->st_shndx)) {
@@ -105,6 +105,73 @@ static void LayOutSymbols(Elf *elf) {
             Elf64_Shdr *shdr = &elf->shdrs[sym->st_shndx];
             sym->st_value += shdr->sh_addr;
 
+        }
+    }
+}
+
+static void ApplyRelocs(Elf *elf, Elf64_Shdr *shdr) {
+    
+    assert(shdr->sh_type == SHT_RELA);
+
+    for (size_t off = 0; off < shdr->sh_size; off += shdr->sh_entsize) {
+
+        Elf64_Rela *reloc = (Elf64_Rela *) &elf->raw[shdr->sh_offset + off];
+        Elf64_Sym *sym = &elf->sym_tab[ELF64_R_SYM(reloc->r_info)];
+
+        size_t type = ELF64_R_TYPE(reloc->r_info);
+        switch (type) {
+
+            /*
+                S - Represents the value of the symbol whose index resides in 
+                the relocation entry.
+
+                A - Represents the addend used to compute the value of the
+                relocatable field.
+
+                P - Represents the place (section offset or address) of the 
+                storage unit being relocated (computed using r_offset).
+            */
+
+            case R_X86_64_64: {
+                // S + A
+                assert(sym->st_value <= INT64_MAX);
+                int64_t value = (int64_t) sym->st_value + reloc->r_addend;
+                break;
+            }
+
+            case R_X86_64_PC32: {
+                // S + A - P
+                assert(sym->st_value <= INT64_MAX);
+                assert(reloc->r_offset <= INT64_MAX);
+                int64_t value = 
+                    (int64_t) sym->st_value 
+                    + reloc->r_addend 
+                    - (int64_t) reloc->r_offset;
+                break;
+            }
+
+            case R_X86_64_32: {
+                // S + A
+                assert(sym->st_value <= INT64_MAX);
+                int64_t tmp = (int64_t) sym->st_value + reloc->r_addend;
+                assert(tmp >= 0);
+                assert(tmp <= UINT32_MAX);
+                uint32_t value = (uint32_t) tmp;
+                break;
+            }
+
+            case R_X86_64_32S: {
+                // S + A
+                assert(sym->st_value <= INT64_MAX);
+                int64_t tmp = (int64_t) sym->st_value + reloc->r_addend;
+                assert(tmp >= 0);
+                assert(tmp <= INT32_MAX);
+                uint32_t value = (uint32_t) tmp;
+                break;
+            }
+
+            default:
+                fprintf(stderr, "Can't handle reloc type: %lu\n", type);
         }
     }
 }
@@ -203,6 +270,7 @@ int main(int argc, char **argv) {
                 case SHT_RELA:
                     fprintf(log_rel, "\n");
                     ELFPrintRelocs(log_rel, elf, shdr);
+                    ApplyRelocs(elf, shdr);
                     break;
             }
         }

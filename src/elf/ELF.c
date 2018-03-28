@@ -620,11 +620,11 @@ void ELFPrintRelocs(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
 
         fprintf(
             file, 
-            "[%s] [%s] %lu [%s] %lu [%s]\n", 
+            "[%s] [%s] %li %lu [%s] %lu [%s]\n", 
             path,
             &elf->sec_name_str_tab[shdr->sh_name],
             // reloc->r_offset,
-            // reloc->r_addend,
+            reloc->r_addend,
             ELF64_R_SYM(reloc->r_info),
             sym_name,
             ELF64_R_TYPE(reloc->r_info),

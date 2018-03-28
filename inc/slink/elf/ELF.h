@@ -204,3 +204,8 @@ int ELFIsShNdxSpecial(Elf64_Half index);
 #define SHF_MASKPROC            0xf0000000
 
 #define PT_INTERP   3
+
+#define R_X86_64_64     1
+#define R_X86_64_PC32   2
+#define R_X86_64_32     10
+#define R_X86_64_32S    11

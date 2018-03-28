@@ -8,9 +8,11 @@
 0 [main.o] [OrderSecList] [.text] 0x20c
 0 [main.o] [] [.rodata] 0x0
 0 [main.o] [AssignSecAddresses] [.text] 0x239
-0 [main.o] [__PRETTY_FUNCTION__.3183] [.rodata] 0x130
+0 [main.o] [__PRETTY_FUNCTION__.3183] [.rodata] 0x1d0
 0 [main.o] [LayOutSymbols] [.text] 0x335
-0 [main.o] [__PRETTY_FUNCTION__.3210] [.rodata] 0x143
+0 [main.o] [ApplyRelocs] [.text] 0x423
+0 [main.o] [__PRETTY_FUNCTION__.3204] [.rodata] 0x1e8
+0 [main.o] [__PRETTY_FUNCTION__.3233] [.rodata] 0x1f4
 0 [main.o] [] [.note.GNU-stack] 0x0
 0 [main.o] [] [.eh_frame] 0x0
 0 [main.o] [] [.comment] 0x0
@@ -21,7 +23,7 @@
 0 [main.o] [ELFSpecialSectionName] [SHN_UNDEF] 0x0
 0 [main.o] [stderr] [SHN_UNDEF] 0x0
 0 [main.o] [fprintf] [SHN_UNDEF] 0x0
-0 [main.o] [main] [.text] 0x43a
+0 [main.o] [main] [.text] 0x707
 0 [main.o] [puts] [SHN_UNDEF] 0x0
 0 [main.o] [fopen] [SHN_UNDEF] 0x0
 0 [main.o] [printf] [SHN_UNDEF] 0x0
@@ -42,9 +44,9 @@
 1 [ELF.o] [] [.bss] 0x0
 1 [ELF.o] [] [.rodata] 0x0
 1 [ELF.o] [flength] [.text] 0xe59
-1 [ELF.o] [__PRETTY_FUNCTION__.3432] [.rodata] 0x1028
+1 [ELF.o] [__PRETTY_FUNCTION__.3432] [.rodata] 0x1030
 1 [ELF.o] [RelocTypeName] [.text] 0x1536
-1 [ELF.o] [__PRETTY_FUNCTION__.3482] [.rodata] 0x1030
+1 [ELF.o] [__PRETTY_FUNCTION__.3482] [.rodata] 0x1038
 1 [ELF.o] [] [.note.GNU-stack] 0x0
 1 [ELF.o] [] [.eh_frame] 0x0
 1 [ELF.o] [] [.comment] 0x0
