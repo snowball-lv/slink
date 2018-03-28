@@ -126,6 +126,7 @@ typedef struct {
 
 } Elf;
 
+int IsElf(char *path);
 void ELFRead(char *path, Elf *elf);
 
 char *ELFFileClassName(uint8_t FileClass);

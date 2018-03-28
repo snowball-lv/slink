@@ -176,7 +176,7 @@ static void ApplyRelocs(Elf *elf, Elf64_Shdr *shdr) {
     }
 }
 
-int main(int argc, char **argv) {
+int main_old(int argc, char **argv) {
     printf("--- S LINK ---\n");
     
     FILE *log_sec = fopen("log-sec.txt", "wb");

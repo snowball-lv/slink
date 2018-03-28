@@ -631,3 +631,16 @@ void ELFPrintRelocs(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
             RelocTypeName(ELF64_R_TYPE(reloc->r_info)));
     }
 }
+
+int IsElf(char *path) {
+
+    FILE *file = fopen(path, "rb");
+    assert(file);
+
+    char magic[4];
+    fread(magic, 1, 4, file);
+
+    fclose(file);
+
+    return strncmp(ELF_MAGIC, magic, 4) == 0;
+}
