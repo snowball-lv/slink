@@ -18,7 +18,7 @@ int IsArchive(char *path) {
 }
 
 void ARPrintFileHeader(ARFileHeader *header) {
-    printf("FileIdentifier: [%.16s]\n", header->FileIdentifier);
+    printf("FileIdentifier: [%.16s]", header->FileIdentifier);
     // printf("Timestamp: [%.12s]\n", header->Timestamp);
     // printf("OwnerID: [%.6s]\n", header->OwnerID);
     // printf("GroupID: [%.6s]\n", header->GroupID);
