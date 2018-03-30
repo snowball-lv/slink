@@ -210,3 +210,11 @@ int ELFIsShNdxSpecial(Elf64_Half index);
 #define R_X86_64_PC32   2
 #define R_X86_64_32     10
 #define R_X86_64_32S    11
+
+#define STB_LOCAL       0
+
+#define STV_DEFAULT     0
+#define STV_HIDDEN      2
+
+#define STB_GLOBAL      1
+#define STB_WEAK        2

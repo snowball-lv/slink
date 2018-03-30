@@ -16,4 +16,16 @@ typedef struct {
     char Ending[2];
 } ARFileHeader;
 
+typedef struct {
+
+    char *data;
+    size_t data_length;
+
+    ARFileHeader **headers;
+    int header_count;
+    
+} Archive;
+
+void ARReadArchive(char *path, Archive *archive);
+
 void ARPrintFileHeader(ARFileHeader *header);
