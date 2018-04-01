@@ -13,10 +13,10 @@ PRE="${PRE} /usr/lib/gcc/x86_64-linux-gnu/5/crtbeginT.o"
 
 POST=""
 POST="${POST} /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/libc.a"
-# POST="${POST} /usr/lib/gcc/x86_64-linux-gnu/5/libgcc.a"
+POST="${POST} /usr/lib/gcc/x86_64-linux-gnu/5/libgcc.a"
 POST="${POST} /usr/lib/gcc/x86_64-linux-gnu/5/libgcc_eh.a"
 # POST="${POST} /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/libc.a"
 POST="${POST} /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o"
 POST="${POST} /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o"
 
-./bin/slink ${PRE} $(find ./out/ -name "*.o") ${POST}
+./bin/slink ${PRE} $(find ./out/test/ -name "*.o") ${POST}

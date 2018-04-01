@@ -6,6 +6,7 @@ require "fileutils"
 task :default do
     sh "rake -f rakefile-deps"
     sh "rake -f rakefile-bin"
+    sh "rake -f rakefile-test"
 end
 
 task :clean do

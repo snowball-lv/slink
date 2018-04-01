@@ -4,7 +4,8 @@ require "fileutils"
 
 
 SRCS = FileList[
-    "src/**/*.c"
+    "src/**/*.c",
+    "test/**/*.c"
 ]
 DEPS = SRCS.pathmap("deps/%X.deps")
 
