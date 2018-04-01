@@ -21,11 +21,11 @@ typedef struct {
     char *data;
     size_t data_length;
 
-    ARFileHeader **headers;
-    int header_count;
+    char *sym_tab;
     
 } Archive;
 
 void ARReadArchive(char *path, Archive *archive);
 
 void ARPrintFileHeader(ARFileHeader *header);
+int ARDefinesSymbol(Archive *archive, char *name);

@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <slink/elf/Archive.h>
 
 
@@ -58,6 +59,40 @@ static int FileHeaderCount(Archive *archive) {
     return count;
 }
 
+static ARFileHeader *FindFile(Archive *archive, char *name) {
+
+    assert(strlen(name) <= 16);
+
+    char name_buf[16];
+    memset(name_buf, ' ', 16);
+    memcpy(name_buf, name, strlen(name));
+
+    size_t off = 0;
+    off += strlen(AR_MAGIC);
+
+    while (off < archive->data_length) {
+
+        ARFileHeader *header = (ARFileHeader *) &archive->data[off];
+        
+        assert(strncmp(AR_ENDING, header->Ending, 2) == 0);
+
+        if (memcmp(name_buf, header->FileIdentifier, 16) == 0) {
+            return header;
+        }
+
+        off += sizeof(ARFileHeader);
+
+        size_t file_size = strtoul(header->FileSize, 0, 10);
+        off += file_size;
+
+        if (off % 2 != 0) {
+            off++;
+        }
+    }
+
+    return 0;
+}
+
 void ARReadArchive(char *path, Archive *archive) {
 
     if (!IsArchive(path)) {
@@ -80,5 +115,35 @@ void ARReadArchive(char *path, Archive *archive) {
 
     fclose(file);
 
-    archive->header_count = FileHeaderCount(archive);
+    assert(strncmp(archive->data, AR_MAGIC, strlen(AR_MAGIC)) == 0);
+
+    ARFileHeader *sym_tab_fh = FindFile(archive, "/");
+    assert(sym_tab_fh != 0);
+
+    archive->sym_tab = ((char *) sym_tab_fh) + sizeof(ARFileHeader);
+}
+
+static uint32_t ReadU32BE(char *ptr) {
+    char buff[4] = {
+        ptr[3], ptr[2], ptr[1], ptr[0]
+    };
+    return *(uint32_t *) buff;
+}
+
+int ARDefinesSymbol(Archive *archive, char *name) {
+
+    char *ptr = archive->sym_tab;
+    uint32_t sym_cnt = ReadU32BE(ptr);
+    
+    ptr += 4;
+    ptr += 4 * sym_cnt;
+
+    for (size_t i = 0; i < sym_cnt; i++) {
+        if (strcmp(name, ptr) == 0) {
+            return 1;
+        }
+        ptr += strlen(ptr) + 1;
+    }
+
+    return 0;
 }
