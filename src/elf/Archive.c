@@ -167,7 +167,7 @@ void ARLoadModuleWithSymbol(Archive *archive, char *name) {
     ARFileHeader *fh = GetSymFH(archive, name);
     assert(fh != 0);
 
-    printf("[%s] found in [%.16s]\n", name, fh->FileIdentifier);
+    // printf("[%s] found in [%.16s]\n", name, fh->FileIdentifier);
 
     char name_buf[32];
     sprintf(name_buf, "%.16s", fh->FileIdentifier);
@@ -175,7 +175,7 @@ void ARLoadModuleWithSymbol(Archive *archive, char *name) {
     for (size_t i = 0; i < archive->loaded_cnt; i++) {
         Elf *mod = &archive->loaded[i];
         if (strcmp(name_buf, mod->path) == 0) {
-            printf("[%.16s] has been loaded\n", fh->FileIdentifier);
+            printf("Already loaded [%.16s]\n", fh->FileIdentifier);
             return;
         }
     }

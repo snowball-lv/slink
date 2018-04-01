@@ -52,8 +52,7 @@ static void AddUndef(char *name, unsigned char binding) {
 
     undef_updated = 1;
 
-    // printf("Requested [%s]\n", name);
-    printf("    [%s]\n", name);
+    printf("Requested [%s]\n", name);
 }
 
 static void DefineUndef(char *name) {
@@ -63,8 +62,7 @@ static void DefineUndef(char *name) {
         if (strcmp(undef->name, name) == 0) {
             if (!undef->defined) {
 
-                // printf("Defined [%s]\n", name);
-                printf("    [%s]\n", name);
+                printf("Defined [%s]\n", name);
                 undef->defined = 1;
 
                 undef_updated = 1;
@@ -95,7 +93,6 @@ static void PrintUndefs() {
 }
 
 static void CollectELFUndefs(Elf *elf) {
-    printf("Requests by elf [%s]\n", elf->path);
     // skip null symbol
     for (size_t i = 1; i < elf->sym_cnt; i++) {
 
@@ -112,7 +109,6 @@ static void CollectELFUndefs(Elf *elf) {
 }
 
 static void CollectFileUndefs(InputFile *ifile) {
-    printf("Requests by [%s]\n", ifile->path);
     if (ifile->elf) {
 
         Elf *elf = ifile->elf;
@@ -144,7 +140,6 @@ static void CollectFileUndefs(InputFile *ifile) {
 }
 
 static void ResolveFileUndefs(InputFile *ifile) {
-    printf("Definitions by [%s]\n", ifile->path);
     if (ifile->elf) {
 
         Elf *elf = ifile->elf;
