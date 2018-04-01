@@ -190,7 +190,7 @@ static void ResolveFileUndefs(InputFile *ifile) {
 
         for (size_t i = 0; i < undef_cnt; i++) {
             Global *undef = &undefs[i];
-            if (!undef->defined && ARDefinesSymbol(archive, undef->name)) {
+            if (!undef->defined && (undef->binding == STB_GLOBAL) && ARDefinesSymbol(archive, undef->name)) {
 
                 // printf("AR Defines [%s]\n", undef->name);
                 ARLoadModuleWithSymbol(archive, undef->name);
