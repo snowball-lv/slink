@@ -121,6 +121,9 @@ void ARReadArchive(char *path, Archive *archive) {
     assert(sym_tab_fh != 0);
 
     archive->sym_tab = ((char *) sym_tab_fh) + sizeof(ARFileHeader);
+
+    archive->loaded = 0;
+    archive->loaded_cnt = 0;
 }
 
 static uint32_t ReadU32BE(char *ptr) {
@@ -130,20 +133,63 @@ static uint32_t ReadU32BE(char *ptr) {
     return *(uint32_t *) buff;
 }
 
-int ARDefinesSymbol(Archive *archive, char *name) {
-
+static ARFileHeader *GetSymFH(Archive *archive, char *name) {
+     
     char *ptr = archive->sym_tab;
     uint32_t sym_cnt = ReadU32BE(ptr);
     
     ptr += 4;
-    ptr += 4 * sym_cnt;
+    char *off_ptr = ptr;
+    char *str_ptr = ptr + 4 * sym_cnt;
 
     for (size_t i = 0; i < sym_cnt; i++) {
-        if (strcmp(name, ptr) == 0) {
-            return 1;
+        if (strcmp(name, str_ptr) == 0) {
+            
+            uint32_t off = ReadU32BE(off_ptr);
+            ARFileHeader *fh = (ARFileHeader *) &archive->data[off];
+            assert(strncmp(AR_ENDING, fh->Ending, 2) == 0);
+            return fh;
         }
-        ptr += strlen(ptr) + 1;
+        str_ptr += strlen(str_ptr) + 1;
+        off_ptr += 4;
     }
 
     return 0;
+    
+}
+
+int ARDefinesSymbol(Archive *archive, char *name) {
+    return GetSymFH(archive, name) != 0;
+}
+
+void ARLoadModuleWithSymbol(Archive *archive, char *name) {
+
+    ARFileHeader *fh = GetSymFH(archive, name);
+    assert(fh != 0);
+
+    printf("[%s] found in [%.16s]\n", name, fh->FileIdentifier);
+
+    char name_buf[32];
+    sprintf(name_buf, "%.16s", fh->FileIdentifier);
+
+    for (size_t i = 0; i < archive->loaded_cnt; i++) {
+        Elf *mod = &archive->loaded[i];
+        if (strcmp(name_buf, mod->path) == 0) {
+            printf("[%.16s] has been loaded\n", fh->FileIdentifier);
+            return;
+        }
+    }
+
+    printf("Loading [%.16s]\n", fh->FileIdentifier);
+
+    archive->loaded_cnt++;
+    archive->loaded = realloc(archive->loaded, archive->loaded_cnt * sizeof(Elf));
+
+    Elf *elf = &archive->loaded[archive->loaded_cnt - 1];
+    size_t mem_size = strtoul(fh->FileSize, 0, 10);
+    char *mem_ptr = ((char *) fh) + sizeof(ARFileHeader);
+
+    char *cpy = malloc(strlen(name_buf));
+    strcpy(cpy, name_buf); 
+    ELFReadFromMem(cpy, mem_ptr, mem_size, elf);
 }

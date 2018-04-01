@@ -445,20 +445,13 @@ static long int flength(FILE *file) {
     return length;
 }
 
-void ELFRead(char *path, Elf *elf) {
-
-    FILE *in = fopen(path, "rb");
-    assert(in);
-
-    elf->path = path;
+static void ELFReadFD(FILE *in, Elf *elf) {
 
     long int length = flength(in);
     assert(length >= 0);
     
     elf->raw = malloc((size_t) length);
     fread(elf->raw, (size_t) length, 1, in);
-
-    fclose(in);
 
     // set pointer to elf header
     elf->ehdr = (Elf64_Ehdr *) elf->raw;
@@ -521,6 +514,27 @@ void ELFRead(char *path, Elf *elf) {
             elf->sym_str_tab = &elf->raw[strsh->sh_offset];
         }
     }
+}
+
+void ELFRead(char *path, Elf *elf) {
+    FILE *in = fopen(path, "rb");
+    assert(in);
+    elf->path = path;
+    ELFReadFD(in, elf);
+    fclose(in);
+}
+
+void ELFReadFromMem(char *name, char *mem, size_t size, Elf *elf) {
+
+    FILE *tmp = tmpfile();
+    assert(tmp);
+    fwrite(mem, 1, size, tmp);
+
+    rewind(tmp);
+
+    elf->path = name;
+    ELFReadFD(tmp, elf);
+    fclose(tmp);
 }
 
 void ELFPrintSymTab(FILE *file, Elf *elf) {

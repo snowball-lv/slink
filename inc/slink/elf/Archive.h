@@ -1,5 +1,7 @@
 #pragma once
 
+#include <slink/elf/ELF.h>
+
 
 #define AR_MAGIC    "!<arch>\n"
 #define AR_ENDING   "`\n"
@@ -22,6 +24,9 @@ typedef struct {
     size_t data_length;
 
     char *sym_tab;
+
+    Elf *loaded;
+    size_t loaded_cnt;
     
 } Archive;
 
@@ -29,3 +34,5 @@ void ARReadArchive(char *path, Archive *archive);
 
 void ARPrintFileHeader(ARFileHeader *header);
 int ARDefinesSymbol(Archive *archive, char *name);
+
+void ARLoadModuleWithSymbol(Archive *archive, char *name);

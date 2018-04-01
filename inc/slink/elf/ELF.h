@@ -128,6 +128,7 @@ typedef struct {
 
 int IsElf(char *path);
 void ELFRead(char *path, Elf *elf);
+void ELFReadFromMem(char *name, char *mem, size_t size, Elf *elf);
 
 char *ELFFileClassName(uint8_t FileClass);
 char *ELFDataEncodingName(uint8_t DataEncoding);

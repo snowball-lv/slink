@@ -24,13 +24,14 @@ typedef struct {
 typedef struct {
     char *name;
     int defined;
+    unsigned char binding;
 } Global;
 
 static Global *undefs = 0;
 static size_t undef_cnt = 0;
 static int undef_updated = 0;
 
-static void AddUndef(char *name) {
+static void AddUndef(char *name, unsigned char binding) {
 
     for (size_t i = 0; i < undef_cnt; i++) {
         Global *undef = &undefs[i];
@@ -47,27 +48,12 @@ static void AddUndef(char *name) {
 
     undefs[undef_cnt - 1].name = name;
     undefs[undef_cnt - 1].defined = 0;
+    undefs[undef_cnt - 1].binding = binding;
 
     undef_updated = 1;
 
-    printf("Requested [%s]\n", name);
-}
-
-static void CollectUndefs(Elf *elf) {
-
-    // skip null symbol
-    for (size_t i = 1; i < elf->sym_cnt; i++) {
-
-        Elf64_Sym *sym = &elf->sym_tab[i];
-
-        // TODO: handle SHN_XINDEX
-        assert(sym->st_shndx != SHN_XINDEX);
-
-        if (sym->st_shndx == SHN_UNDEF) {
-            char *name = &elf->sym_str_tab[sym->st_name];
-            AddUndef(name);
-        }
-    }
+    // printf("Requested [%s]\n", name);
+    printf("    [%s]\n", name);
 }
 
 static void DefineUndef(char *name) {
@@ -77,7 +63,8 @@ static void DefineUndef(char *name) {
         if (strcmp(undef->name, name) == 0) {
             if (!undef->defined) {
 
-                printf("Defined [%s]\n", name);
+                // printf("Defined [%s]\n", name);
+                printf("    [%s]\n", name);
                 undef->defined = 1;
 
                 undef_updated = 1;
@@ -99,13 +86,16 @@ static void PrintUndefs() {
     for (size_t i = 0; i < undef_cnt; i++) {
         Global *undef = &undefs[i];
         if (!undef->defined) {
-            printf("Still undefined [%s]\n", undef->name);
+            printf(
+                "Still undefined [%s] [%s]\n",
+                undef->name,
+                ELFSymBindingName(undef->binding));
         }
     }
 }
 
-static void ResolveUndefs(Elf *elf) {
-
+static void CollectELFUndefs(Elf *elf) {
+    printf("Requests by elf [%s]\n", elf->path);
     // skip null symbol
     for (size_t i = 1; i < elf->sym_cnt; i++) {
 
@@ -114,48 +104,100 @@ static void ResolveUndefs(Elf *elf) {
         // TODO: handle SHN_XINDEX
         assert(sym->st_shndx != SHN_XINDEX);
 
-        unsigned char visibility = ELF64_ST_VISIBILITY(sym->st_other);
-
-        // skip hidden symbols
-        if (visibility == STV_HIDDEN) {
-            continue;
-        }
-
-        // TODO: handle non STV_DEFAULT visibilities
-        assert(visibility == STV_DEFAULT);
-
-        unsigned char binding = ELF64_ST_BIND(sym->st_info);
-
-        switch (binding) {
-            // ignore local symbols
-            case STB_LOCAL:
-                continue;
-        }
-
-        // handle only WEAK or GLOBAL symbols
-        assert((binding == STB_GLOBAL) || binding == STB_WEAK);
-
-        if (sym->st_shndx != SHN_UNDEF) {
+        if (sym->st_shndx == SHN_UNDEF) {
             char *name = &elf->sym_str_tab[sym->st_name];
-            DefineUndef(name);
+            AddUndef(name, ELF64_ST_BIND(sym->st_info));
         }
     }
 }
 
-static void CollectARUndefs(Archive *archive) {
+static void CollectFileUndefs(InputFile *ifile) {
+    printf("Requests by [%s]\n", ifile->path);
+    if (ifile->elf) {
 
+        Elf *elf = ifile->elf;
+
+        // skip null symbol
+        for (size_t i = 1; i < elf->sym_cnt; i++) {
+
+            Elf64_Sym *sym = &elf->sym_tab[i];
+
+            // TODO: handle SHN_XINDEX
+            assert(sym->st_shndx != SHN_XINDEX);
+
+            if (sym->st_shndx == SHN_UNDEF) {
+                char *name = &elf->sym_str_tab[sym->st_name];
+                AddUndef(name, ELF64_ST_BIND(sym->st_info));
+            }
+        }
+
+    } else {
+
+        Archive *archive = ifile->archive;
+
+        for (size_t i = 0; i < archive->loaded_cnt; i++) {
+            Elf *mod = &archive->loaded[i];
+            CollectELFUndefs(mod);
+        }
+
+    }
 }
 
-static void ResolveARUndefs(Archive *archive) {
+static void ResolveFileUndefs(InputFile *ifile) {
+    printf("Definitions by [%s]\n", ifile->path);
+    if (ifile->elf) {
 
-    for (size_t i = 0; i < undef_cnt; i++) {
-        Global *undef = &undefs[i];
-        if (!undef->defined && ARDefinesSymbol(archive, undef->name)) {
+        Elf *elf = ifile->elf;
 
-            printf("AR Defines [%s]\n", undef->name);
-            undef->defined = 1;
-            
-            undef_updated = 1;
+        // skip null symbol
+        for (size_t i = 1; i < elf->sym_cnt; i++) {
+
+            Elf64_Sym *sym = &elf->sym_tab[i];
+
+            // TODO: handle SHN_XINDEX
+            assert(sym->st_shndx != SHN_XINDEX);
+
+            unsigned char visibility = ELF64_ST_VISIBILITY(sym->st_other);
+
+            // skip hidden symbols
+            if (visibility == STV_HIDDEN) {
+                continue;
+            }
+
+            // TODO: handle non STV_DEFAULT visibilities
+            assert(visibility == STV_DEFAULT);
+
+            unsigned char binding = ELF64_ST_BIND(sym->st_info);
+
+            switch (binding) {
+                // ignore local symbols
+                case STB_LOCAL:
+                    continue;
+            }
+
+            // handle only WEAK or GLOBAL symbols
+            assert((binding == STB_GLOBAL) || binding == STB_WEAK);
+
+            if (sym->st_shndx != SHN_UNDEF) {
+                char *name = &elf->sym_str_tab[sym->st_name];
+                DefineUndef(name);
+            }
+        }
+
+    } else {
+
+        Archive *archive = ifile->archive;
+
+        for (size_t i = 0; i < undef_cnt; i++) {
+            Global *undef = &undefs[i];
+            if (!undef->defined && ARDefinesSymbol(archive, undef->name)) {
+
+                // printf("AR Defines [%s]\n", undef->name);
+                ARLoadModuleWithSymbol(archive, undef->name);
+                undef->defined = 1;
+
+                undef_updated = 1;
+            }
         }
     }
 }
@@ -229,18 +271,8 @@ int main(int argc, char **argv) {
         for (size_t i = 0; i < ifile_cnt; i++) {
 
             InputFile *ifile = &ifiles[i];
-
-            if (ifile->elf) {
-                
-                CollectUndefs(ifile->elf);
-                ResolveUndefs(ifile->elf);
-
-            } else if (ifile->archive) {
-                
-                CollectARUndefs(ifile->archive);
-                ResolveARUndefs(ifile->archive);
-            
-            }
+            CollectFileUndefs(ifile);
+            ResolveFileUndefs(ifile);
         }
 
         if (!undef_updated) {
