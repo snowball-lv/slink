@@ -586,8 +586,8 @@ void ELFPrintSHdr(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
 
     fprintf(
         file, 
-        "%u [%s] [%s] [%s] %lu 0x%lx 0x%lx",
-        elf->index,
+        "[%s] [%s] [%s] %lu 0x%lx 0x%lx",
+        // elf->index,
         path,
         &elf->sec_name_str_tab[shdr->sh_name],
         ELFSectionTypeName(shdr->sh_type),

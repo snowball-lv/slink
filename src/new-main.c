@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#include <slink/Context.h>
 #include <slink/elf/ELF.h>
 #include <slink/elf/Archive.h>
 
@@ -25,16 +26,16 @@ typedef struct {
     char *name;
     int defined;
     unsigned char binding;
-} Global;
+} Global_Old;
 
-static Global *undefs = 0;
+static Global_Old *undefs = 0;
 static size_t undef_cnt = 0;
 static int undef_updated = 0;
 
 static void AddUndef(char *name, unsigned char binding) {
 
     for (size_t i = 0; i < undef_cnt; i++) {
-        Global *undef = &undefs[i];
+        Global_Old *undef = &undefs[i];
         if (strcmp(undef->name, name) == 0) {
             // printf("Already added [%s]\n", name);
             return;
@@ -44,7 +45,7 @@ static void AddUndef(char *name, unsigned char binding) {
     // printf("Added undef [%s]\n", name);
 
     undef_cnt++;
-    undefs = realloc(undefs, undef_cnt * sizeof(Global));
+    undefs = realloc(undefs, undef_cnt * sizeof(Global_Old));
 
     undefs[undef_cnt - 1].name = name;
     undefs[undef_cnt - 1].defined = 0;
@@ -58,7 +59,7 @@ static void AddUndef(char *name, unsigned char binding) {
 static void DefineUndef(char *name) {
 
     for (size_t i = 0; i < undef_cnt; i++) {
-        Global *undef = &undefs[i];
+        Global_Old *undef = &undefs[i];
         if (strcmp(undef->name, name) == 0) {
             if (!undef->defined) {
 
@@ -82,8 +83,8 @@ static void DefineUndef(char *name) {
 static void PrintUndefs() {
 
     for (size_t i = 0; i < undef_cnt; i++) {
-        Global *undef = &undefs[i];
-        if (!undef->defined) {
+        Global_Old *undef = &undefs[i];
+        if (!undef->defined && undef->binding != STB_WEAK) {
             printf(
                 "Still undefined [%s] [%s]\n",
                 undef->name,
@@ -184,7 +185,7 @@ static void ResolveFileUndefs(InputFile *ifile) {
         Archive *archive = ifile->archive;
 
         for (size_t i = 0; i < undef_cnt; i++) {
-            Global *undef = &undefs[i];
+            Global_Old *undef = &undefs[i];
             if (!undef->defined && (undef->binding == STB_GLOBAL) && ARDefinesSymbol(archive, undef->name)) {
 
                 // printf("AR Defines [%s]\n", undef->name);
@@ -197,7 +198,121 @@ static void ResolveFileUndefs(InputFile *ifile) {
     }
 }
 
+static size_t CountELFs(InputFile *ifiles, size_t cnt) {
+    size_t total = 0;
+    for (size_t i = 0; i < cnt; i++) {
+        InputFile *ifile = &ifiles[i];
+        if (ifile->elf) {
+            total++;
+        } else {
+            total += ifile->archive->loaded_cnt;
+        }
+    }
+    return total;
+}
+
+static Elf **ToElfList(InputFile *ifiles, size_t cnt) {
+
+    size_t total = CountELFs(ifiles, cnt);
+    Elf **elfs = malloc(total * sizeof(Elf *));
+
+    size_t counter = 0;
+
+    for (size_t i = 0; i < cnt; i++) {
+
+        InputFile *ifile = &ifiles[i];
+
+        if (ifile->elf) {
+            elfs[counter++] = ifile->elf;
+        } else {
+            Archive *archive = ifile->archive;
+            for (size_t k = 0; k < archive->loaded_cnt; k++) {
+               elfs[counter++] = &archive->loaded[k];
+            }
+        }
+    }
+
+    assert(counter == total);
+
+    return elfs;
+}
+
+typedef struct {
+    Elf *elf;
+    Elf64_Shdr *shdr;
+} SecRef;
+
+static int sec_order_compar(const void *p1, const void *p2) {
+
+    const Elf *elfa = ((SecRef *) p1)->elf;
+    const Elf *elfb = ((SecRef *) p2)->elf;
+
+    const Elf64_Shdr *a = ((SecRef *) p1)->shdr;
+    const Elf64_Shdr *b = ((SecRef *) p2)->shdr;
+
+    #define FLAG_TEST(flag, a, b) {                 \
+        if ((a & flag) && !(b & flag)) {            \
+            return -1;                              \
+        } else if ((b & flag) && !(a & flag)) {     \
+            return 1;                               \
+        }                                           \
+    }
+
+    FLAG_TEST(SHF_ALLOC, a->sh_flags, b->sh_flags);
+    FLAG_TEST(SHF_WRITE, b->sh_flags, a->sh_flags);
+    FLAG_TEST(SHF_EXECINSTR, a->sh_flags, b->sh_flags);
+
+    #undef FLAG_TEST
+
+    if (a->sh_type != b->sh_type) {
+        if (a->sh_type == SHT_PROGBITS) {
+            return -1;
+        } else if (b->sh_type == SHT_PROGBITS) {
+            return 1;
+        } else if (a->sh_type == SHT_NOBITS) {
+            return -1;
+        } else if (b->sh_type == SHT_NOBITS) {
+            return 1;
+        }
+    }
+
+    char *na = &elfa->sec_name_str_tab[a->sh_name];
+    char *nb = &elfb->sec_name_str_tab[b->sh_name];
+
+    if (strcmp(na, nb) != 0) {
+        return strcmp(na, nb);
+    }
+
+    return elfa->index - elfb->index;
+}
+
+static void OrderSecList(SecRef *list, size_t length) {
+    qsort(list, length, sizeof(SecRef), sec_order_compar);
+}
+
 int main(int argc, char **argv) {
+    printf("--- S LINK ---\n");
+
+    // define linking context
+    Context ctx = { 0 };
+
+    // save list of input files
+    ctx.ifiles_cnt = (size_t) argc - 1;
+    ctx.ifiles = &argv[1];
+
+    // print input files
+    for (size_t i = 0; i < ctx.ifiles_cnt; i++) {
+        printf("Input File [%s]\n", ctx.ifiles[i]);
+    }
+
+    CTXLoadInputFiles(&ctx);
+    CTXCollectUndefs(&ctx);
+    CTXResolveUndefs(&ctx);
+
+    return 0;
+}
+
+int main_old2(int argc, char **argv) {
     printf("--- S LINK ---\n");
 
     char **inputs = &argv[1];
@@ -278,6 +393,57 @@ int main(int argc, char **argv) {
     }
 
     PrintUndefs();
+
+    size_t elf_cnt = CountELFs(ifiles, ifile_cnt);
+    printf("ELF count %lu\n", elf_cnt);
+
+    Elf **elfs = ToElfList(ifiles, ifile_cnt);
+
+    for (size_t i = 0; i < elf_cnt; i++) {
+        printf("--- [%s]\n", elfs[i]->path);
+    }
+    
+    size_t sec_cnt = 0;    
+    for (size_t i = 0; i < elf_cnt; i++) {
+        sec_cnt += elfs[i]->shnum;
+    }
+
+    printf("Sec count %lu\n", sec_cnt);
+
+    SecRef *sec_list = malloc(sec_cnt * sizeof(SecRef));
+
+    FILE *log_secs = fopen("log-sec.txt", "wb");
+    FILE *log_secs_ordered = fopen("log-sec-ordered.txt", "wb");
+
+    size_t sec_counter = 0;
+    for (size_t i = 0; i < elf_cnt; i++) {
+
+        Elf *elf = elfs[i];
+
+        // printf("File: [%s]\n", elf->path);
+
+        for (size_t k = 0; k < elf->shnum; k++) {
+
+            Elf64_Shdr *shdr = &elf->shdrs[k];
+            ELFPrintSHdr(log_secs, elf, shdr);
+
+            sec_list[sec_counter].elf = elf;
+            sec_list[sec_counter].shdr = shdr;
+            sec_counter++;
+        }
+
+        // ELFPrintSymTab(log_sym, elf);
+    }
+
+    OrderSecList(sec_list, sec_cnt);
+
+    for (size_t i = 0; i < sec_cnt; i++) {
+        SecRef *ref = &sec_list[i];
+        ELFPrintSHdr(log_secs_ordered, ref->elf, ref->shdr);
+    }
+
+    fclose(log_secs);
+    fclose(log_secs_ordered);
 
     return 0;
 }
