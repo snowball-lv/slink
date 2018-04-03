@@ -30,5 +30,6 @@ typedef struct {
 } Context;
 
 void CTXLoadInputFiles(Context *ctx);
+
 void CTXCollectUndefs(Context *ctx);
-void CTXResolveUndefs(Context *ctx);
+int CTXResolveUndefs(Context *ctx);

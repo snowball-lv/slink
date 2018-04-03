@@ -94,7 +94,71 @@ void CTXCollectUndefs(Context *ctx) {
     }
 }
 
-void CTXResolveUndefs(Context *ctx) {
+static int DefineUndef(Context *ctx, char *name) {
+
+    for (size_t i = 0; i < ctx->undefs_cnt; i++) {
+        Global *undef = &ctx->undefs[i];
+        if (!undef->defined) {
+            if (strcmp(undef->name, name) == 0) {
+
+                printf("Defined [%s]\n", name);
+                undef->defined = 1;
+
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static int ResolveELFUndefs(Context *ctx, Elf *elf, int in_lib) {
+
+    int updated = 0;
+
+    // skip null symbol
+    for (size_t i = 1; i < elf->sym_cnt; i++) {
+
+        Elf64_Sym *sym = &elf->sym_tab[i];
+
+        // TODO: handle SHN_XINDEX
+        assert(sym->st_shndx != SHN_XINDEX);
+
+        unsigned char visibility = ELF64_ST_VISIBILITY(sym->st_other);
+
+        // skip hidden symbols
+        if (visibility == STV_HIDDEN) {
+            continue;
+        }
+
+        // TODO: handle non STV_DEFAULT visibilities
+        assert(visibility == STV_DEFAULT);
+
+        unsigned char binding = ELF64_ST_BIND(sym->st_info);
+
+        switch (binding) {
+            // ignore local symbols
+            case STB_LOCAL:
+                continue;
+        }
+
+        // handle only WEAK or GLOBAL symbols
+        assert((binding == STB_GLOBAL) || binding == STB_WEAK);
+
+        if (sym->st_shndx != SHN_UNDEF) {
+            char *name = &elf->sym_str_tab[sym->st_name];
+            updated |= DefineUndef(ctx, name);
+            // printf("Define [%s]\n", name);
+        }
+    }
+
+    return updated;
+}
+
+int CTXResolveUndefs(Context *ctx) {
+
+    int updated = 0;
+
     for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
 
         LoadedFile *lfile = &ctx->lfiles[i];
@@ -102,59 +166,29 @@ void CTXResolveUndefs(Context *ctx) {
         if (lfile->elf) {
 
             Elf *elf = lfile->elf;
-
-            // skip null symbol
-            for (size_t i = 1; i < elf->sym_cnt; i++) {
-
-                Elf64_Sym *sym = &elf->sym_tab[i];
-
-                // TODO: handle SHN_XINDEX
-                assert(sym->st_shndx != SHN_XINDEX);
-
-                unsigned char visibility = ELF64_ST_VISIBILITY(sym->st_other);
-
-                // skip hidden symbols
-                if (visibility == STV_HIDDEN) {
-                    continue;
-                }
-
-                // TODO: handle non STV_DEFAULT visibilities
-                assert(visibility == STV_DEFAULT);
-
-                unsigned char binding = ELF64_ST_BIND(sym->st_info);
-
-                switch (binding) {
-                    // ignore local symbols
-                    case STB_LOCAL:
-                        continue;
-                }
-
-                // handle only WEAK or GLOBAL symbols
-                assert((binding == STB_GLOBAL) || binding == STB_WEAK);
-
-                if (sym->st_shndx != SHN_UNDEF) {
-                    char *name = &elf->sym_str_tab[sym->st_name];
-                    // DefineUndef(name);
-                    printf("Define [%s]\n", name);
-                }
-            }
+            updated |= ResolveELFUndefs(ctx, elf, 0);
 
         } else {
 
             Archive *archive = lfile->archive;
-
-            for (size_t i = 0; i < ctx->undefs_cnt; i++) {
-
-                Global *undef = &ctx->undefs[i];
-
+ 
+            // load modules that define undef symbols
+            for (size_t k = 0; k < ctx->undefs_cnt; k++) {
+                Global *undef = &ctx->undefs[k];
                 if (!undef->defined && (undef->binding == STB_GLOBAL)) {
                     if (ARDefinesSymbol(archive, undef->name)) {
-                        
                         ARLoadModuleWithSymbol(archive, undef->name);
-                        undef->defined = 1;
                     }
                 }
             }
+
+            // resolve undefs with loaded modules
+            for (size_t k = 0; k < archive->loaded_cnt; k++) {
+                Elf *mod = &archive->loaded[k];
+                updated |= ResolveELFUndefs(ctx, mod, 1);
+            }
         }
     }
+
+    return updated;
 }

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <slink/elf/Archive.h>
+#include <slink/Common.h>
 
 
 int IsArchive(char *path) {
@@ -119,8 +120,20 @@ void ARReadArchive(char *path, Archive *archive) {
 
     ARFileHeader *sym_tab_fh = FindFile(archive, "/");
     assert(sym_tab_fh != 0);
-
     archive->sym_tab = ((char *) sym_tab_fh) + sizeof(ARFileHeader);
+
+    ARFileHeader *str_tab_fh = FindFile(archive, "//");
+    assert(str_tab_fh != 0);
+    archive->str_tab = ((char *) str_tab_fh) + sizeof(ARFileHeader);
+
+    // replace LF with 0 in str_tab
+    // makes it easier to use as strings
+    size_t str_tab_size = strtoul(str_tab_fh->FileSize, 0, 10);
+    for (size_t i = 0; i < str_tab_size; i++) {
+        if (archive->str_tab[i] == '\n') {
+            archive->str_tab[i] = 0;
+        }
+    }
 
     archive->loaded = 0;
     archive->loaded_cnt = 0;
@@ -167,20 +180,18 @@ void ARLoadModuleWithSymbol(Archive *archive, char *name) {
     ARFileHeader *fh = GetSymFH(archive, name);
     assert(fh != 0);
 
-    // printf("[%s] found in [%.16s]\n", name, fh->FileIdentifier);
-
     char name_buf[32];
-    sprintf(name_buf, "%.16s", fh->FileIdentifier);
+    ARGetFileName(archive, fh, name_buf);
 
     for (size_t i = 0; i < archive->loaded_cnt; i++) {
         Elf *mod = &archive->loaded[i];
         if (strcmp(name_buf, mod->path) == 0) {
-            printf("Already loaded [%.16s]\n", fh->FileIdentifier);
+            // printf("Already loaded [%s]\n", name_buf);
             return;
         }
     }
 
-    printf("Loading [%.16s]\n", fh->FileIdentifier);
+    printf("Loading [%s]\n", name_buf);
 
     archive->loaded_cnt++;
     archive->loaded = realloc(archive->loaded, archive->loaded_cnt * sizeof(Elf));
@@ -189,7 +200,47 @@ void ARLoadModuleWithSymbol(Archive *archive, char *name) {
     size_t mem_size = strtoul(fh->FileSize, 0, 10);
     char *mem_ptr = ((char *) fh) + sizeof(ARFileHeader);
 
-    char *cpy = malloc(strlen(name_buf));
-    strcpy(cpy, name_buf); 
-    ELFReadFromMem(cpy, mem_ptr, mem_size, elf);
+    ELFReadFromMem(StringCopy(name_buf), mem_ptr, mem_size, elf);
+}
+
+void ARGetFileName(Archive *ar, ARFileHeader *fh, char *buffer) {
+
+    memcpy(buffer, fh->FileIdentifier, 16);
+    buffer[17] = 0;
+
+    for (int i = 15; i >= 0; i--) {
+        if (buffer[i] == ' ') {
+            buffer[i] = 0;
+        } else {
+            break;
+        }
+    }
+
+    size_t name_off = 0;
+    if (sscanf(buffer, "/%lu", &name_off) > 0) {
+        char *lname = &ar->str_tab[name_off];
+        sprintf(buffer, "%s-%s", buffer, lname);
+    }
+}
+
+Elf *ARElfOfSym(Archive *ar, char *name) {
+
+    ARFileHeader *fh = GetSymFH(ar, name);
+    assert(fh != 0);
+
+    char name_buf[128];
+    ARGetFileName(ar, fh, name_buf);
+
+    for (size_t i = 0; i < ar->loaded_cnt; i++) {
+        Elf *mod = &ar->loaded[i];
+        if (strcmp(name_buf, mod->path) == 0) {
+            return mod;
+        }
+    }
+
+    fprintf(
+        stderr, 
+        "Archive doesn not define symbol [%s]\n",
+        name);
+    exit(1);
 }

@@ -24,6 +24,7 @@ typedef struct {
     size_t data_length;
 
     char *sym_tab;
+    char *str_tab;
 
     Elf *loaded;
     size_t loaded_cnt;
@@ -36,3 +37,7 @@ void ARPrintFileHeader(ARFileHeader *header);
 int ARDefinesSymbol(Archive *archive, char *name);
 
 void ARLoadModuleWithSymbol(Archive *archive, char *name);
+
+void ARGetFileName(Archive *ar, ARFileHeader *fh, char *buffer);
+
+Elf *ARElfOfSym(Archive *ar, char *name);

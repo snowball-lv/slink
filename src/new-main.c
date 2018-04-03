@@ -306,8 +306,25 @@ int main(int argc, char **argv) {
     }
 
     CTXLoadInputFiles(&ctx);
-    CTXCollectUndefs(&ctx);
-    CTXResolveUndefs(&ctx);
+
+    int updated = 1;
+    while (updated) {
+
+        printf("\n");
+        printf("----------------------------\n");
+        printf("          NEW PASS\n");
+        printf("----------------------------\n");
+        printf("\n");
+
+        CTXCollectUndefs(&ctx);
+        updated = CTXResolveUndefs(&ctx);
+    }
+
+    printf("\n");
+    printf("----------------------------\n");
+    printf("            DONE\n");
+    printf("----------------------------\n");
+    printf("\n");
 
     return 0;
 }
