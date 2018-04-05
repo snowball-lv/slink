@@ -35,7 +35,7 @@ CFLAGS = [
 LFLAGS = [
     # "-shared",
     "-static",
-    # "-Wl,--verbose",
+    "-Wl,--verbose",
     "-nostdlib"
     # "-nodefaultlibs",
 ]

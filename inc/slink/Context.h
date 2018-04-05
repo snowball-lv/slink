@@ -33,3 +33,5 @@ void CTXLoadInputFiles(Context *ctx);
 
 void CTXCollectUndefs(Context *ctx);
 int CTXResolveUndefs(Context *ctx);
+
+void CTXPrintUndefs(Context *ctx);

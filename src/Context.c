@@ -41,6 +41,8 @@ void CTXLoadInputFiles(Context *ctx) {
 
 static void AddUndef(Context *ctx, char *name, unsigned char binding) {
 
+    assert((binding == STB_GLOBAL) || (binding == STB_WEAK));
+
     for (size_t i = 0; i < ctx->undefs_cnt; i++) {
         Global *undef = &ctx->undefs[i];
         if (strcmp(undef->name, name) == 0) {
@@ -55,8 +57,6 @@ static void AddUndef(Context *ctx, char *name, unsigned char binding) {
     ctx->undefs[ctx->undefs_cnt - 1].name = name;
     ctx->undefs[ctx->undefs_cnt - 1].defined = 0;
     ctx->undefs[ctx->undefs_cnt - 1].binding = binding;
-
-    // undef_updated = 1;
 
     printf("Requested [%s]\n", name);
 }
@@ -124,16 +124,6 @@ static int ResolveELFUndefs(Context *ctx, Elf *elf, int in_lib) {
         // TODO: handle SHN_XINDEX
         assert(sym->st_shndx != SHN_XINDEX);
 
-        unsigned char visibility = ELF64_ST_VISIBILITY(sym->st_other);
-
-        // skip hidden symbols
-        if (visibility == STV_HIDDEN) {
-            continue;
-        }
-
-        // TODO: handle non STV_DEFAULT visibilities
-        assert(visibility == STV_DEFAULT);
-
         unsigned char binding = ELF64_ST_BIND(sym->st_info);
 
         switch (binding) {
@@ -174,7 +164,9 @@ int CTXResolveUndefs(Context *ctx) {
  
             // load modules that define undef symbols
             for (size_t k = 0; k < ctx->undefs_cnt; k++) {
+
                 Global *undef = &ctx->undefs[k];
+
                 if (!undef->defined && (undef->binding == STB_GLOBAL)) {
                     if (ARDefinesSymbol(archive, undef->name)) {
                         ARLoadModuleWithSymbol(archive, undef->name);
@@ -191,4 +183,21 @@ int CTXResolveUndefs(Context *ctx) {
     }
 
     return updated;
+}
+
+void CTXPrintUndefs(Context *ctx) {
+    for (size_t i = 0; i < ctx->undefs_cnt; i++) {
+        Global *undef = &ctx->undefs[i];
+        if (!undef->defined) {
+
+            if (undef->binding == STB_WEAK) {
+                continue;
+            }
+
+            printf(
+                "Still undefined [%s] [%s]\n",
+                undef->name,
+                ELFSymBindingName(undef->binding));
+        }
+    }
 }

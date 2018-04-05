@@ -94,6 +94,13 @@ static ARFileHeader *FindFile(Archive *archive, char *name) {
     return 0;
 }
 
+static uint32_t ReadU32BE(char *ptr) {
+    char buff[4] = {
+        ptr[3], ptr[2], ptr[1], ptr[0]
+    };
+    return *(uint32_t *) buff;
+}
+
 void ARReadArchive(char *path, Archive *archive) {
 
     if (!IsArchive(path)) {
@@ -137,13 +144,25 @@ void ARReadArchive(char *path, Archive *archive) {
 
     archive->loaded = 0;
     archive->loaded_cnt = 0;
-}
 
-static uint32_t ReadU32BE(char *ptr) {
-    char buff[4] = {
-        ptr[3], ptr[2], ptr[1], ptr[0]
-    };
-    return *(uint32_t *) buff;
+    // printf("\n");
+    // printf("[%s]\n", path);
+    // printf("------------------------------\n");
+    // printf("\n");
+
+    // // log symbols
+    // char *ptr = archive->sym_tab;
+    // uint32_t sym_cnt = ReadU32BE(ptr);
+    // ptr += 4;
+    // ptr += sym_cnt * 4;
+    // for (size_t i = 0; i < sym_cnt; i++) {
+    //     printf("[%s]\n", ptr);
+    //     ptr += strlen(ptr) + 1;
+    // }
+
+    // printf("\n");
+    // printf("------------------------------\n");
+
 }
 
 static ARFileHeader *GetSymFH(Archive *archive, char *name) {
@@ -201,6 +220,17 @@ void ARLoadModuleWithSymbol(Archive *archive, char *name) {
     char *mem_ptr = ((char *) fh) + sizeof(ARFileHeader);
 
     ELFReadFromMem(StringCopy(name_buf), mem_ptr, mem_size, elf);
+
+    // if (strcmp(name_buf, "stdio.o/") == 0) {
+
+    //     for (size_t i = 0; i < elf->sym_cnt; i++) {
+    //         Elf64_Sym *sym = &elf->sym_tab[i];
+    //         char *name = &elf->sym_str_tab[sym->st_name];
+    //         printf("[%s]\n", name);
+    //     }
+
+    //     exit(1);
+    // }
 }
 
 void ARGetFileName(Archive *ar, ARFileHeader *fh, char *buffer) {
