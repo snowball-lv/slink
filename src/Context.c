@@ -101,39 +101,78 @@ void CTXCollectUndefs(Context *ctx) {
     }
 }
 
+static Global *FindUndef(Context *ctx, char *name) {
+    for (size_t i = 0; i < ctx->undefs_cnt; i++) {
+        Global *undef = ctx->undefs[i];
+        if (strcmp(undef->name, name) == 0) {
+            return undef;
+        }
+    }
+    return 0;
+}
+
 static int DefineUndef(Context *ctx, char *name, Elf *elf, Elf64_Sym *sym) {
 
-    for (size_t i = 0; i < ctx->undefs_cnt; i++) {
+    Global *undef = FindUndef(ctx, name);
+    if (undef == 0) {
+        return 0;
+    }
 
-        Global *undef = ctx->undefs[i];
+    if (undef->defined) {
 
-        if (strcmp(undef->name, name) == 0) {
-            if (undef->defined && undef->def != sym) {
-
-                unsigned char ba = ELF64_ST_BIND(undef->def->st_info);
-                unsigned char bb = ELF64_ST_BIND(sym->st_info);
-
-                if (ba == STB_GLOBAL && bb == STB_GLOBAL) {
-
-                    fprintf(stderr, "Multiple definitions of [%s]\n", name);
-                    fprintf(stderr, "By [%s] and [%s]\n", elf->path, undef->def_by->path);
-                    exit(1);
-                }
-            }
+        // already defined by current sym
+        if (undef->def == sym) {
+            return 0;
         }
 
-        if (!undef->defined) {
-            if (strcmp(undef->name, name) == 0) {
+        unsigned char ba = ELF64_ST_BIND(undef->def->st_info);
+        unsigned char bb = ELF64_ST_BIND(sym->st_info);
 
-                printf("Defined [%s]\n", name);
+        if (ba == STB_GLOBAL && bb == STB_GLOBAL) {
 
-                undef->def_by = elf;
-                undef->def = sym;
-                undef->defined = 1;
+            fprintf(stderr, "Multiple definitions of [%s]\n", name);
+            fprintf(stderr, "By [%s] and [%s]\n", elf->path, undef->def_by->path);
+            exit(1);
 
-                return 1;
-            }
+        } else if (ba == STB_WEAK && bb == STB_GLOBAL) {
+
+            printf(
+                "Overriding WEAK [%s] from [%s], with GLOBAL from [%s]\n",
+                name, undef->def_by->path, elf->path);
+            
+            undef->def_by = elf;
+            undef->def = sym;
+            undef->defined = 1;
+
+            return 1;
+            
+        } else if (ba == STB_GLOBAL && bb == STB_WEAK) {
+
+            printf(
+                "Ignoring WEAK [%s] from [%s], in favor of GLOBAL from [%s]\n",
+                name, elf->path, undef->def_by->path);
+
+        } else if (ba == STB_WEAK && bb == STB_WEAK) {
+
+            printf(
+                "Ignoring WEAK [%s] from [%s], in favor of WEAK from [%s]\n",
+                name, elf->path, undef->def_by->path);
+
+        } else {
+
+            fprintf(stderr, "Impossible bindings!\n");
+            exit(1);
         }
+
+    } else {
+
+        printf("Defined [%s]\n", name);
+
+        undef->def_by = elf;
+        undef->def = sym;
+        undef->defined = 1;
+
+        return 1;
     }
 
     return 0;
