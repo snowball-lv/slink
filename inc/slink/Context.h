@@ -14,6 +14,8 @@ typedef struct {
     char *name;
     int defined;
     unsigned char binding;
+    Elf *def_by;
+    Elf64_Sym *def;
 } Global;
 
 typedef struct {

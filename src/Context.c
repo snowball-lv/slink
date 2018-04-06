@@ -58,6 +58,8 @@ static void AddUndef(Context *ctx, char *name, unsigned char binding) {
     undef->name = name;
     undef->defined = 0;
     undef->binding = binding;
+    undef->def_by = 0;
+    undef->def = 0;
 
     ctx->undefs_cnt++;
     ctx->undefs = realloc(ctx->undefs, ctx->undefs_cnt * sizeof(Global *));
@@ -99,14 +101,34 @@ void CTXCollectUndefs(Context *ctx) {
     }
 }
 
-static int DefineUndef(Context *ctx, char *name) {
+static int DefineUndef(Context *ctx, char *name, Elf *elf, Elf64_Sym *sym) {
 
     for (size_t i = 0; i < ctx->undefs_cnt; i++) {
+
         Global *undef = ctx->undefs[i];
+
+        if (strcmp(undef->name, name) == 0) {
+            if (undef->defined && undef->def != sym) {
+
+                unsigned char ba = ELF64_ST_BIND(undef->def->st_info);
+                unsigned char bb = ELF64_ST_BIND(sym->st_info);
+
+                if (ba == STB_GLOBAL && bb == STB_GLOBAL) {
+
+                    fprintf(stderr, "Multiple definitions of [%s]\n", name);
+                    fprintf(stderr, "By [%s] and [%s]\n", elf->path, undef->def_by->path);
+                    exit(1);
+                }
+            }
+        }
+
         if (!undef->defined) {
             if (strcmp(undef->name, name) == 0) {
 
                 printf("Defined [%s]\n", name);
+
+                undef->def_by = elf;
+                undef->def = sym;
                 undef->defined = 1;
 
                 return 1;
@@ -142,7 +164,7 @@ static int ResolveELFUndefs(Context *ctx, Elf *elf) {
 
         if (sym->st_shndx != SHN_UNDEF) {
             char *name = &elf->sym_str_tab[sym->st_name];
-            updated |= DefineUndef(ctx, name);
+            updated |= DefineUndef(ctx, name, elf, sym);
             // printf("Define [%s]\n", name);
         }
     }
