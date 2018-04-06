@@ -11,9 +11,8 @@ void CTXLoadInputFiles(Context *ctx) {
         char *path = ctx->ifiles[i];
         printf("Loading [%s]\n", path);
 
-        ctx->lfiles_cnt++;
-        ctx->lfiles = realloc(ctx->lfiles, ctx->lfiles_cnt * sizeof(LoadedFile));
-        LoadedFile *lfile = &ctx->lfiles[ctx->lfiles_cnt - 1];
+        LoadedFile *lfile = malloc(sizeof(LoadedFile));
+        memset(lfile, 0, sizeof(LoadedFile));
 
         lfile->path = path;
         lfile->elf = 0;
@@ -36,6 +35,10 @@ void CTXLoadInputFiles(Context *ctx) {
             fprintf(stderr, "[%s]\n", path);
             exit(1);
         }
+
+        ctx->lfiles_cnt++;
+        ctx->lfiles = realloc(ctx->lfiles, ctx->lfiles_cnt * sizeof(LoadedFile *));
+        ctx->lfiles[ctx->lfiles_cnt - 1] = lfile;
     }
 }
 
@@ -80,7 +83,7 @@ static void CollectELFUndefs(Context *ctx, Elf *elf) {
 void CTXCollectUndefs(Context *ctx) {
     for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
 
-        LoadedFile *lfile = &ctx->lfiles[i];
+        LoadedFile *lfile = ctx->lfiles[i];
 
         if (lfile->elf) {
             CollectELFUndefs(ctx, lfile->elf);
@@ -151,7 +154,7 @@ int CTXResolveUndefs(Context *ctx) {
 
     for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
 
-        LoadedFile *lfile = &ctx->lfiles[i];
+        LoadedFile *lfile = ctx->lfiles[i];
 
         if (lfile->elf) {
 

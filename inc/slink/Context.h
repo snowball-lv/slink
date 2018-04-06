@@ -21,7 +21,7 @@ typedef struct {
     char **ifiles;
     size_t ifiles_cnt;
 
-    LoadedFile *lfiles;
+    LoadedFile **lfiles;
     size_t lfiles_cnt;
 
     Global *undefs;
