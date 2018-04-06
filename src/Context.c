@@ -47,19 +47,23 @@ static void AddUndef(Context *ctx, char *name, unsigned char binding) {
     assert((binding == STB_GLOBAL) || (binding == STB_WEAK));
 
     for (size_t i = 0; i < ctx->undefs_cnt; i++) {
-        Global *undef = &ctx->undefs[i];
+        Global *undef = ctx->undefs[i];
         if (strcmp(undef->name, name) == 0) {
             // already added to undefs
             return;
         }
     }
 
-    ctx->undefs_cnt++;
-    ctx->undefs = realloc(ctx->undefs, ctx->undefs_cnt * sizeof(Global));
+    Global *undef = malloc(sizeof(Global));
+    memset(undef, 0, sizeof(Global));
 
-    ctx->undefs[ctx->undefs_cnt - 1].name = name;
-    ctx->undefs[ctx->undefs_cnt - 1].defined = 0;
-    ctx->undefs[ctx->undefs_cnt - 1].binding = binding;
+    undef->name = name;
+    undef->defined = 0;
+    undef->binding = binding;
+
+    ctx->undefs_cnt++;
+    ctx->undefs = realloc(ctx->undefs, ctx->undefs_cnt * sizeof(Global *));
+    ctx->undefs[ctx->undefs_cnt - 1] = undef;
 
     printf("Requested [%s]\n", name);
 }
@@ -100,7 +104,7 @@ void CTXCollectUndefs(Context *ctx) {
 static int DefineUndef(Context *ctx, char *name) {
 
     for (size_t i = 0; i < ctx->undefs_cnt; i++) {
-        Global *undef = &ctx->undefs[i];
+        Global *undef = ctx->undefs[i];
         if (!undef->defined) {
             if (strcmp(undef->name, name) == 0) {
 
@@ -168,7 +172,7 @@ int CTXResolveUndefs(Context *ctx) {
             // load modules that define undef symbols
             for (size_t k = 0; k < ctx->undefs_cnt; k++) {
 
-                Global *undef = &ctx->undefs[k];
+                Global *undef = ctx->undefs[k];
 
                 if (!undef->defined && (undef->binding == STB_GLOBAL)) {
                     if (ARDefinesSymbol(archive, undef->name)) {
@@ -190,7 +194,7 @@ int CTXResolveUndefs(Context *ctx) {
 
 void CTXPrintUndefs(Context *ctx) {
     for (size_t i = 0; i < ctx->undefs_cnt; i++) {
-        Global *undef = &ctx->undefs[i];
+        Global *undef = ctx->undefs[i];
         if (!undef->defined) {
 
             if (undef->binding == STB_WEAK) {

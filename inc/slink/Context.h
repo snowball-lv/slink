@@ -24,7 +24,7 @@ typedef struct {
     LoadedFile **lfiles;
     size_t lfiles_cnt;
 
-    Global *undefs;
+    Global **undefs;
     size_t undefs_cnt;
 
 } Context;
