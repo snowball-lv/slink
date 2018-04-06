@@ -11,8 +11,7 @@ void CTXLoadInputFiles(Context *ctx) {
         char *path = ctx->ifiles[i];
         printf("Loading [%s]\n", path);
 
-        LoadedFile *lfile = malloc(sizeof(LoadedFile));
-        memset(lfile, 0, sizeof(LoadedFile));
+        LoadedFile *lfile = calloc(1, sizeof(LoadedFile));
 
         lfile->path = path;
         lfile->elf = 0;
@@ -54,8 +53,7 @@ static void AddUndef(Context *ctx, char *name, unsigned char binding) {
         }
     }
 
-    Global *undef = malloc(sizeof(Global));
-    memset(undef, 0, sizeof(Global));
+    Global *undef = calloc(1, sizeof(Global));
 
     undef->name = name;
     undef->defined = 0;

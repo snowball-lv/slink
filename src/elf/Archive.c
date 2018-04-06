@@ -182,8 +182,7 @@ void ARLoadModuleWithSymbol(Archive *archive, char *name) {
 
     printf("Loading [%s]\n", name_buf);
 
-    Elf *elf = malloc(sizeof(Elf));
-    memset(elf, 0, sizeof(Elf));
+    Elf *elf = calloc(1, sizeof(Elf));
 
     size_t mem_size = strtoul(fh->FileSize, 0, 10);
     char *mem_ptr = ((char *) fh) + sizeof(ARFileHeader);
