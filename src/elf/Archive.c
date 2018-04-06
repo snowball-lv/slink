@@ -169,7 +169,7 @@ void ARLoadModuleWithSymbol(Archive *archive, char *name) {
     ARFileHeader *fh = GetSymFH(archive, name);
     assert(fh != 0);
 
-    char name_buf[32];
+    char name_buf[128];
     ARGetFileName(archive, fh, name_buf);
 
     for (size_t i = 0; i < archive->loaded_cnt; i++) {
@@ -197,7 +197,7 @@ void ARLoadModuleWithSymbol(Archive *archive, char *name) {
 void ARGetFileName(Archive *ar, ARFileHeader *fh, char *buffer) {
 
     memcpy(buffer, fh->FileIdentifier, 16);
-    buffer[17] = 0;
+    buffer[16] = 0;
 
     for (int i = 15; i >= 0; i--) {
         if (buffer[i] == ' ') {
