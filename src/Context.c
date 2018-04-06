@@ -87,7 +87,7 @@ void CTXCollectUndefs(Context *ctx) {
         } else {
             Archive *archive = lfile->archive;
             for (size_t k = 0; k < archive->loaded_cnt; k++) {
-                Elf *mod = &archive->loaded[k];
+                Elf *mod = archive->loaded[k];
                 CollectELFUndefs(ctx, mod);
             }
         }
@@ -112,7 +112,7 @@ static int DefineUndef(Context *ctx, char *name) {
     return 0;
 }
 
-static int ResolveELFUndefs(Context *ctx, Elf *elf, int in_lib) {
+static int ResolveELFUndefs(Context *ctx, Elf *elf) {
 
     int updated = 0;
 
@@ -156,7 +156,7 @@ int CTXResolveUndefs(Context *ctx) {
         if (lfile->elf) {
 
             Elf *elf = lfile->elf;
-            updated |= ResolveELFUndefs(ctx, elf, 0);
+            updated |= ResolveELFUndefs(ctx, elf);
 
         } else {
 
@@ -176,8 +176,8 @@ int CTXResolveUndefs(Context *ctx) {
 
             // resolve undefs with loaded modules
             for (size_t k = 0; k < archive->loaded_cnt; k++) {
-                Elf *mod = &archive->loaded[k];
-                updated |= ResolveELFUndefs(ctx, mod, 1);
+                Elf *mod = archive->loaded[k];
+                updated |= ResolveELFUndefs(ctx, mod);
             }
         }
     }

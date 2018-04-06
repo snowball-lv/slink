@@ -26,7 +26,7 @@ typedef struct {
     char *sym_tab;
     char *str_tab;
 
-    Elf *loaded;
+    Elf **loaded;
     size_t loaded_cnt;
     
 } Archive;

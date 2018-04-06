@@ -30,36 +30,6 @@ void ARPrintFileHeader(ARFileHeader *header) {
     // printf("Ending: 0x%x 0x%x\n", header->Ending[0], header->Ending[1]);
 }
 
-static int FileHeaderCount(Archive *archive) {
-
-    int count = 0;
-
-    assert(strncmp(archive->data, AR_MAGIC, strlen(AR_MAGIC)) == 0);
-
-    size_t off = 0;
-    off += strlen(AR_MAGIC);
-
-    while (off < archive->data_length) {
-
-        ARFileHeader *header = (ARFileHeader *) &archive->data[off];
-        
-        assert(strncmp(AR_ENDING, header->Ending, 2) == 0);
-
-        off += sizeof(ARFileHeader);
-
-        size_t file_size = strtoul(header->FileSize, 0, 10);
-        off += file_size;
-
-        if (off % 2 != 0) {
-            off++;
-        }
-
-        count++;
-    }
-
-    return count;
-}
-
 static ARFileHeader *FindFile(Archive *archive, char *name) {
 
     assert(strlen(name) <= 16);
@@ -203,7 +173,7 @@ void ARLoadModuleWithSymbol(Archive *archive, char *name) {
     ARGetFileName(archive, fh, name_buf);
 
     for (size_t i = 0; i < archive->loaded_cnt; i++) {
-        Elf *mod = &archive->loaded[i];
+        Elf *mod = archive->loaded[i];
         if (strcmp(name_buf, mod->path) == 0) {
             // printf("Already loaded [%s]\n", name_buf);
             return;
@@ -212,25 +182,17 @@ void ARLoadModuleWithSymbol(Archive *archive, char *name) {
 
     printf("Loading [%s]\n", name_buf);
 
-    archive->loaded_cnt++;
-    archive->loaded = realloc(archive->loaded, archive->loaded_cnt * sizeof(Elf));
+    Elf *elf = malloc(sizeof(Elf));
+    memset(elf, 0, sizeof(Elf));
 
-    Elf *elf = &archive->loaded[archive->loaded_cnt - 1];
     size_t mem_size = strtoul(fh->FileSize, 0, 10);
     char *mem_ptr = ((char *) fh) + sizeof(ARFileHeader);
 
     ELFReadFromMem(StringCopy(name_buf), mem_ptr, mem_size, elf);
 
-    // if (strcmp(name_buf, "stdio.o/") == 0) {
-
-    //     for (size_t i = 0; i < elf->sym_cnt; i++) {
-    //         Elf64_Sym *sym = &elf->sym_tab[i];
-    //         char *name = &elf->sym_str_tab[sym->st_name];
-    //         printf("[%s]\n", name);
-    //     }
-
-    //     exit(1);
-    // }
+    archive->loaded_cnt++;
+    archive->loaded = realloc(archive->loaded, archive->loaded_cnt * sizeof(Elf *));
+    archive->loaded[archive->loaded_cnt - 1] = elf;
 }
 
 void ARGetFileName(Archive *ar, ARFileHeader *fh, char *buffer) {
@@ -262,7 +224,7 @@ Elf *ARElfOfSym(Archive *ar, char *name) {
     ARGetFileName(ar, fh, name_buf);
 
     for (size_t i = 0; i < ar->loaded_cnt; i++) {
-        Elf *mod = &ar->loaded[i];
+        Elf *mod = ar->loaded[i];
         if (strcmp(name_buf, mod->path) == 0) {
             return mod;
         }
