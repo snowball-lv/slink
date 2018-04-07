@@ -34,25 +34,6 @@ CFLAGS = [
 
 LFLAGS = [
     # "-shared",
-    "-static",
-    # "-Wl,--verbose",
-    "-nostdlib"
-    # "-nodefaultlibs",
-]
-
-PRE = [
-    "/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o",
-    "/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o",
-    "/usr/lib/gcc/x86_64-linux-gnu/5/crtbeginT.o",
-]
-
-POST = [
-    # "/usr/lib/gcc/x86_64-linux-gnu/5/libgcc.a",
-    "/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/libc.a",
-    "/usr/lib/gcc/x86_64-linux-gnu/5/libgcc_eh.a",
-    "/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/libc.a",
-    "/usr/lib/gcc/x86_64-linux-gnu/5/crtend.o",
-    "/usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o",
 ]
 
 SRCS.zip(DEPS, OBJS).each do |src, dep, obj|
@@ -68,7 +49,7 @@ end
 
 directory File.dirname(BIN)
 file BIN => OBJS + [File.dirname(BIN)] do
-    sh "gcc #{LFLAGS.join(" ")} #{PRE.join(" ")} #{OBJS.join(" ")} #{POST.join(" ")} -o #{BIN}"
+    sh "gcc #{LFLAGS.join(" ")} #{OBJS.join(" ")} -o #{BIN}"
 end
 
 task :default => BIN
