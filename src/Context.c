@@ -125,44 +125,49 @@ static int DefineUndef(Context *ctx, char *name, Elf *elf, Elf64_Sym *sym) {
             return 0;
         }
 
-        unsigned char ba = ELF64_ST_BIND(undef->def->st_info);
-        unsigned char bb = ELF64_ST_BIND(sym->st_info);
+        unsigned char current_binding = ELF64_ST_BIND(undef->def->st_info);
+        unsigned char new_binding = ELF64_ST_BIND(sym->st_info);
 
-        if (ba == STB_GLOBAL && bb == STB_GLOBAL) {
+        if (current_binding == STB_GLOBAL) {
+            if (new_binding == STB_GLOBAL) {
 
-            fprintf(stderr, "Multiple definitions of [%s]\n", name);
-            fprintf(stderr, "By [%s] and [%s]\n", elf->path, undef->def_by->path);
-            exit(1);
+                fprintf(stderr, "Multiple definitions of [%s]\n", name);
+                fprintf(stderr, "By [%s] and [%s]\n", elf->path, undef->def_by->path);
+                exit(1);
 
-        } else if (ba == STB_WEAK && bb == STB_GLOBAL) {
+            }
+        } else if (current_binding == STB_WEAK) {
+            if (new_binding == STB_GLOBAL) {
 
-            printf(
-                "Overriding WEAK [%s] from [%s], with GLOBAL from [%s]\n",
-                name, undef->def_by->path, elf->path);
-            
-            undef->def_by = elf;
-            undef->def = sym;
-            undef->defined = 1;
+                printf(
+                    "Overriding WEAK [%s] from [%s], with GLOBAL from [%s]\n",
+                    name, undef->def_by->path, elf->path);
+                
+                undef->def_by = elf;
+                undef->def = sym;
+                undef->defined = 1;
 
-            return 1;
-            
-        } else if (ba == STB_GLOBAL && bb == STB_WEAK) {
+                return 1;
 
-            printf(
-                "Ignoring WEAK [%s] from [%s], in favor of GLOBAL from [%s]\n",
-                name, elf->path, undef->def_by->path);
+            } else if (undef->def->st_shndx != SHN_COMMON) {
+                if (sym->st_shndx == SHN_COMMON) {
 
-        } else if (ba == STB_WEAK && bb == STB_WEAK) {
+                    printf(
+                        "Overriding WEAK [%s] from [%s], with GLOBAL from [%s]\n",
+                        name, undef->def_by->path, elf->path);
+                    
+                    undef->def_by = elf;
+                    undef->def = sym;
+                    undef->defined = 1;
 
-            printf(
-                "Ignoring WEAK [%s] from [%s], in favor of WEAK from [%s]\n",
-                name, elf->path, undef->def_by->path);
-
-        } else {
-
-            fprintf(stderr, "Impossible bindings!\n");
-            exit(1);
+                    return 1;
+                }
+            }
         }
+
+        printf(
+            "Ignoring [%s] from [%s], in favor of [%s]\n",
+            name, elf->path, undef->def_by->path);
 
     } else {
 
