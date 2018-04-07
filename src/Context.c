@@ -275,3 +275,147 @@ void CTXPrintUndefs(Context *ctx) {
         }
     }
 }
+
+static size_t CountSections(Context *ctx) {
+
+    size_t count = 0;
+
+    for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
+        LoadedFile *lfile = ctx->lfiles[i];
+        if (lfile->elf) {
+            Elf *elf = lfile->elf;
+            count += elf->shnum;
+        } else {
+            Archive *archive = lfile->archive;
+            for (size_t k = 0; k < archive->loaded_cnt; k++) {
+                Elf *mod = archive->loaded[k];
+                count += mod->shnum;
+            }
+        }
+    }
+
+    return count;
+}
+
+static void CollectELFSections(Context *ctx, Elf *elf) {
+
+    printf("\n");
+    printf("- [%s]\n", elf->path);
+
+    // skip NULL section
+    for (size_t i = 1; i < elf->shnum; i++) {
+
+        Elf64_Shdr *shdr = &elf->shdrs[i];
+        char *name = &elf->sec_name_str_tab[shdr->sh_name];
+        printf("    [%s]\n", name);
+
+    }
+}
+
+static int sec_order_compar(const void *p1, const void *p2) {
+
+    const Elf *elfa = ((SecRef *) p1)->elf;
+    const Elf *elfb = ((SecRef *) p2)->elf;
+
+    const Elf64_Shdr *a = ((SecRef *) p1)->shdr;
+    const Elf64_Shdr *b = ((SecRef *) p2)->shdr;
+
+    #define FLAG_TEST(flag, a, b) {                 \
+        if ((a & flag) && !(b & flag)) {            \
+            return -1;                              \
+        } else if ((b & flag) && !(a & flag)) {     \
+            return 1;                               \
+        }                                           \
+    }
+
+    FLAG_TEST(SHF_ALLOC, a->sh_flags, b->sh_flags);
+    FLAG_TEST(SHF_WRITE, b->sh_flags, a->sh_flags);
+    FLAG_TEST(SHF_EXECINSTR, a->sh_flags, b->sh_flags);
+
+    #undef FLAG_TEST
+
+    if (a->sh_type != b->sh_type) {
+        if (a->sh_type == SHT_PROGBITS) {
+            return -1;
+        } else if (b->sh_type == SHT_PROGBITS) {
+            return 1;
+        } else if (a->sh_type == SHT_NOBITS) {
+            return -1;
+        } else if (b->sh_type == SHT_NOBITS) {
+            return 1;
+        }
+    }
+
+    char *na = &elfa->sec_name_str_tab[a->sh_name];
+    char *nb = &elfb->sec_name_str_tab[b->sh_name];
+
+    if (strcmp(na, nb) != 0) {
+        return strcmp(na, nb);
+    }
+
+    return elfa->index - elfb->index;
+}
+
+static void OrderSecList(SecRef *list, size_t length) {
+    qsort(list, length, sizeof(SecRef), sec_order_compar);
+}
+
+void CTXCollectSections(Context *ctx) {
+
+    size_t sec_count = CountSections(ctx);
+    SecRef *sec_refs = calloc(sec_count, sizeof(SecRef));
+
+    size_t counter = 0;
+
+    for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
+
+        LoadedFile *lfile = ctx->lfiles[i];
+
+        if (lfile->elf) {
+
+            Elf *elf = lfile->elf;
+
+            for (size_t k = 0; k < elf->shnum; k++) {
+
+                Elf64_Shdr *shdr = &elf->shdrs[k];
+
+                sec_refs[counter].elf = elf;
+                sec_refs[counter].shdr = shdr;
+                counter++;
+            }
+
+        } else {
+
+            Archive *archive = lfile->archive;
+
+            for (size_t k = 0; k < archive->loaded_cnt; k++) {
+
+                Elf *mod = archive->loaded[k];
+
+                for (size_t n = 0; n < mod->shnum; n++) {
+
+                    Elf64_Shdr *shdr = &mod->shdrs[n];
+
+                    sec_refs[counter].elf = mod;
+                    sec_refs[counter].shdr = shdr;
+                    counter++;
+                }
+            }
+        }
+    }
+
+    assert(counter == sec_count);
+
+    OrderSecList(sec_refs, sec_count);
+
+    ctx->sec_count = sec_count;
+    ctx->sec_refs = sec_refs;
+}
+
+void CTXPrintSections(Context *ctx) {
+    for (size_t i = 0; i < ctx->sec_count; i++) {
+        SecRef *sr = &ctx->sec_refs[i];
+        char *sec_name = &sr->elf->sec_name_str_tab[sr->shdr->sh_name];
+        printf("[%s] [%s]\n", sec_name, sr->elf->path);
+    }
+}

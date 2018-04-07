@@ -54,5 +54,8 @@ int main(int argc, char **argv) {
 
     CTXPrintUndefs(&ctx);
 
+    CTXCollectSections(&ctx);
+    CTXPrintSections(&ctx);
+
     return 0;
 }

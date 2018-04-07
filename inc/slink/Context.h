@@ -19,6 +19,11 @@ typedef struct {
 } Global;
 
 typedef struct {
+    Elf *elf;
+    Elf64_Shdr *shdr;
+} SecRef;
+
+typedef struct {
 
     char **ifiles;
     size_t ifiles_cnt;
@@ -29,6 +34,9 @@ typedef struct {
     Global **undefs;
     size_t undefs_cnt;
 
+    SecRef *sec_refs;
+    size_t sec_count;
+
 } Context;
 
 void CTXLoadInputFiles(Context *ctx);
@@ -37,3 +45,6 @@ void CTXCollectUndefs(Context *ctx);
 int CTXResolveUndefs(Context *ctx);
 
 void CTXPrintUndefs(Context *ctx);
+
+void CTXCollectSections(Context *ctx);
+void CTXPrintSections(Context *ctx);
