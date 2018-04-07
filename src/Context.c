@@ -113,6 +113,9 @@ static Global *FindUndef(Context *ctx, char *name) {
 
 static int DefineUndef(Context *ctx, char *name, Elf *elf, Elf64_Sym *sym) {
 
+    unsigned char binding = ELF64_ST_BIND(sym->st_info);
+    assert((binding == STB_GLOBAL) || (binding == STB_WEAK));
+
     Global *undef = FindUndef(ctx, name);
     if (undef == 0) {
         return 0;
