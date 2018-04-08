@@ -48,7 +48,18 @@ static void AddUndef(Context *ctx, char *name, unsigned char binding) {
     for (size_t i = 0; i < ctx->undefs_cnt; i++) {
         Global *undef = ctx->undefs[i];
         if (strcmp(undef->name, name) == 0) {
+
             // already added to undefs
+            // use the strictest binding
+            // (global overrides weak)
+
+            if (binding == STB_GLOBAL) {
+                if (undef->binding == STB_WEAK) {
+                    printf("Overriding WEAK ref to [%s] with GLOBAL\n", name);
+                    undef->binding = STB_GLOBAL;
+                }
+            }
+
             return;
         }
     }
@@ -442,4 +453,21 @@ void CTXPrintSections(Context *ctx) {
         char *sec_name = &sr->elf->sec_name_str_tab[sr->shdr->sh_name];
         printf("0x%.8lx [%s] [%s]\n", sr->shdr->sh_addr, sec_name, sr->elf->path);
     }
+}
+
+size_t CTXCountModules(Context *ctx) {
+
+    size_t count = 0;
+
+    for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
+        LoadedFile *lfile = ctx->lfiles[i];
+        if (lfile->elf) {
+            count++;
+        } else {
+            Archive *archive = lfile->archive;
+            count += archive->loaded_cnt;
+        }
+    }
+
+    return count;
 }

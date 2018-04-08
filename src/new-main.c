@@ -55,7 +55,9 @@ int main(int argc, char **argv) {
     CTXPrintUndefs(&ctx);
 
     CTXCollectSections(&ctx);
-    CTXPrintSections(&ctx);
+    // CTXPrintSections(&ctx);
+
+    printf("%lu modules loaded\n", CTXCountModules(&ctx));
 
     return 0;
 }

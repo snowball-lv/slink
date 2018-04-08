@@ -48,3 +48,5 @@ void CTXPrintUndefs(Context *ctx);
 
 void CTXCollectSections(Context *ctx);
 void CTXPrintSections(Context *ctx);
+
+size_t CTXCountModules(Context *ctx);
