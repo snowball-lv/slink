@@ -122,13 +122,18 @@ static Global *FindUndef(Context *ctx, char *name) {
     return 0;
 }
 
-static int DefineUndef(Context *ctx, char *name, Elf *elf, Elf64_Sym *sym) {
+static int DefineUndef(Context *ctx, char *name, Elf *elf, Elf64_Sym *sym, int in_lib) {
 
     unsigned char binding = ELF64_ST_BIND(sym->st_info);
     assert((binding == STB_GLOBAL) || (binding == STB_WEAK));
 
     Global *undef = FindUndef(ctx, name);
     if (undef == 0) {
+        return 0;
+    }
+
+    // skip if undef is WEAK and sym comes from library
+    if (undef->binding == STB_WEAK && in_lib) {
         return 0;
     }
 
@@ -197,7 +202,7 @@ static int DefineUndef(Context *ctx, char *name, Elf *elf, Elf64_Sym *sym) {
     return 0;
 }
 
-static int ResolveELFUndefs(Context *ctx, Elf *elf) {
+static int ResolveELFUndefs(Context *ctx, Elf *elf, int in_lib) {
 
     int updated = 0;
 
@@ -222,7 +227,7 @@ static int ResolveELFUndefs(Context *ctx, Elf *elf) {
 
         if (sym->st_shndx != SHN_UNDEF) {
             char *name = &elf->sym_str_tab[sym->st_name];
-            updated |= DefineUndef(ctx, name, elf, sym);
+            updated |= DefineUndef(ctx, name, elf, sym, in_lib);
             // printf("Define [%s]\n", name);
         }
     }
@@ -241,7 +246,7 @@ int CTXResolveUndefs(Context *ctx) {
         if (lfile->elf) {
 
             Elf *elf = lfile->elf;
-            updated |= ResolveELFUndefs(ctx, elf);
+            updated |= ResolveELFUndefs(ctx, elf, 0);
 
         } else {
 
@@ -262,7 +267,7 @@ int CTXResolveUndefs(Context *ctx) {
             // resolve undefs with loaded modules
             for (size_t k = 0; k < archive->loaded_cnt; k++) {
                 Elf *mod = archive->loaded[k];
-                updated |= ResolveELFUndefs(ctx, mod);
+                updated |= ResolveELFUndefs(ctx, mod, 1);
             }
         }
     }
