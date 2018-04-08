@@ -360,6 +360,29 @@ static void OrderSecList(SecRef *list, size_t length) {
     qsort(list, length, sizeof(SecRef), sec_order_compar);
 }
 
+static void AssignSecAddresses(SecRef *list, size_t length, size_t base) {
+
+    size_t addr = base;
+
+    for (size_t i = 0 ; i < length; i++) {
+
+        SecRef *ref = &list[i];
+        Elf64_Shdr *shdr = ref->shdr;
+
+        assert((shdr->sh_addr == 0) && "Can't handle non 0 base sections.");
+
+        if (shdr->sh_addralign > 1) {
+            if ((addr % shdr->sh_addralign) != 0) {
+                addr += shdr->sh_addralign;
+                addr = (addr / shdr->sh_addralign) * shdr->sh_addralign;
+            }
+        }
+
+        shdr->sh_addr = addr;
+        addr += shdr->sh_size;
+    }
+}
+
 void CTXCollectSections(Context *ctx) {
 
     size_t sec_count = CountSections(ctx);
@@ -407,6 +430,7 @@ void CTXCollectSections(Context *ctx) {
     assert(counter == sec_count);
 
     OrderSecList(sec_refs, sec_count);
+    AssignSecAddresses(sec_refs, sec_count, 0);
 
     ctx->sec_count = sec_count;
     ctx->sec_refs = sec_refs;
@@ -416,6 +440,6 @@ void CTXPrintSections(Context *ctx) {
     for (size_t i = 0; i < ctx->sec_count; i++) {
         SecRef *sr = &ctx->sec_refs[i];
         char *sec_name = &sr->elf->sec_name_str_tab[sr->shdr->sh_name];
-        printf("[%s] [%s]\n", sec_name, sr->elf->path);
+        printf("0x%.8lx [%s] [%s]\n", sr->shdr->sh_addr, sec_name, sr->elf->path);
     }
 }
