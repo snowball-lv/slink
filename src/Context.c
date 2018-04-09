@@ -71,6 +71,28 @@ static void TestSupport(Elf *elf) {
                 fprintf(stderr, "No support for type [%s]\n", ELFSectionTypeName(shdr->sh_type));
                 exit(1);
         }
+
+        // test section attribute support
+        for (size_t k = 0; k < ELF_SHFS_CNT; k++) {
+            Elf64_Xword flag = ELF_SHFS[k];
+            if (flag & shdr->sh_flags) {
+                switch (flag) {
+
+                    case SHF_ALLOC:
+                    case SHF_EXECINSTR:
+                    case SHF_INFO_LINK:
+                    case SHF_WRITE:
+                    case SHF_MERGE:
+                    case SHF_STRINGS:
+                        break;
+
+                    default:
+                        fprintf(stderr, "For section [%s]\n", name);
+                        fprintf(stderr, "No support for flag [%s]\n", ELFSectionFlagName(flag));
+                        exit(1);
+                }
+            }
+        }
     }
 }
 

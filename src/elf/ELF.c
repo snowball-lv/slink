@@ -210,35 +210,35 @@ char *ELFSectionTypeName(Elf64_Word sh_type) {
 }
 
 Elf64_Xword ELF_SHFS[] = {
-    0x1,
-    0x2,
-    0x4,
-    0x10,
-    0x20,
-    0x40,
-    0x80,
-    0x100,
-    0x200,
-    0x400,
-    0x0ff00000,
-    0xf0000000,
+    SHF_WRITE,
+    SHF_ALLOC,
+    SHF_EXECINSTR,
+    SHF_MERGE,
+    SHF_STRINGS,
+    SHF_INFO_LINK,
+    SHF_LINK_ORDER,
+    SHF_OS_NONCONFORMING,
+    SHF_GROUP,
+    SHF_TLS,
+    SHF_MASKOS,
+    SHF_MASKPROC,
 };
-int ELF_SHFS_CNT = sizeof(ELF_SHFS) / sizeof(ELF_SHFS[0]);
+size_t ELF_SHFS_CNT = sizeof(ELF_SHFS) / sizeof(ELF_SHFS[0]);
 
 char *ELFSectionFlagName(Elf64_Xword sh_flag) {
     switch (sh_flag) {
-        case 0x1: return "SHF_WRITE";
-        case 0x2: return "SHF_ALLOC";
-        case 0x4: return "SHF_EXECINSTR";
-        case 0x10: return "SHF_MERGE";
-        case 0x20: return "SHF_STRINGS";
-        case 0x40: return "SHF_INFO_LINK";
-        case 0x80: return "SHF_LINK_ORDER";
-        case 0x100: return "SHF_OS_NONCONFORMING";
-        case 0x200: return "SHF_GROUP";
-        case 0x400: return "SHF_TLS";
-        case 0x0ff00000: return "SHF_MASKOS";
-        case 0xf0000000: return "SHF_MASKPROC";
+        case SHF_WRITE: return "SHF_WRITE";
+        case SHF_ALLOC: return "SHF_ALLOC";
+        case SHF_EXECINSTR: return "SHF_EXECINSTR";
+        case SHF_MERGE: return "SHF_MERGE";
+        case SHF_STRINGS: return "SHF_STRINGS";
+        case SHF_INFO_LINK: return "SHF_INFO_LINK";
+        case SHF_LINK_ORDER: return "SHF_LINK_ORDER";
+        case SHF_OS_NONCONFORMING: return "SHF_OS_NONCONFORMING";
+        case SHF_GROUP: return "SHF_GROUP";
+        case SHF_TLS: return "SHF_TLS";
+        case SHF_MASKOS: return "SHF_MASKOS";
+        case SHF_MASKPROC: return "SHF_MASKPROC";
     }
     return "{invalid section flag}";
 }
@@ -599,7 +599,7 @@ void ELFPrintSHdr(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
         shdr->sh_addralign,
         shdr->sh_addr);
 
-    for (int i = 0; i < ELF_SHFS_CNT; i++) {
+    for (size_t i = 0; i < ELF_SHFS_CNT; i++) {
         Elf64_Xword m = shdr->sh_flags & ELF_SHFS[i];
         if (m != 0) {
             fprintf(file, " [%s]", ELFSectionFlagName(m));

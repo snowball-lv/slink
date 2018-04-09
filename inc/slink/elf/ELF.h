@@ -140,7 +140,7 @@ char *ELFMachineName(Elf64_Half e_machine);
 char *ELFVersionName(Elf64_Word e_version);
 
 extern Elf64_Xword ELF_SHFS[];
-extern int ELF_SHFS_CNT;
+extern size_t ELF_SHFS_CNT;
 
 char *ELFSectionTypeName(Elf64_Word sh_type);
 char *ELFSectionFlagName(Elf64_Xword sh_flag);
