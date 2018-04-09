@@ -15,19 +15,12 @@ void CTXLoadInputFiles(Context *ctx) {
 
         lfile->path = path;
         lfile->elf = 0;
-        lfile->archive = 0;
 
         if (IsElf(path)) {
 
             Elf *elf = calloc(1, sizeof(Elf));
             ELFRead(path, elf);
             lfile->elf = elf;
-
-        } else if (IsArchive(path)) {
-
-            Archive *archive = calloc(1, sizeof(Archive));
-            ARReadArchive(path, archive);
-            lfile->archive = archive;
 
         } else {
             fprintf(stderr, "Unknown file type\n");
@@ -97,18 +90,8 @@ static void CollectELFUndefs(Context *ctx, Elf *elf) {
 
 void CTXCollectUndefs(Context *ctx) {
     for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
-
         LoadedFile *lfile = ctx->lfiles[i];
-
-        if (lfile->elf) {
-            CollectELFUndefs(ctx, lfile->elf);
-        } else {
-            Archive *archive = lfile->archive;
-            for (size_t k = 0; k < archive->loaded_cnt; k++) {
-                Elf *mod = archive->loaded[k];
-                CollectELFUndefs(ctx, mod);
-            }
-        }
+        CollectELFUndefs(ctx, lfile->elf);
     }
 }
 
@@ -248,27 +231,6 @@ int CTXResolveUndefs(Context *ctx) {
             Elf *elf = lfile->elf;
             updated |= ResolveELFUndefs(ctx, elf, 0);
 
-        } else {
-
-            Archive *archive = lfile->archive;
- 
-            // load modules that define undef symbols
-            for (size_t k = 0; k < ctx->undefs_cnt; k++) {
-
-                Global *undef = ctx->undefs[k];
-
-                if (!undef->defined && (undef->binding == STB_GLOBAL)) {
-                    if (ARDefinesSymbol(archive, undef->name)) {
-                        ARLoadModuleWithSymbol(archive, undef->name);
-                    }
-                }
-            }
-
-            // resolve undefs with loaded modules
-            for (size_t k = 0; k < archive->loaded_cnt; k++) {
-                Elf *mod = archive->loaded[k];
-                updated |= ResolveELFUndefs(ctx, mod, 1);
-            }
         }
     }
 
@@ -301,31 +263,10 @@ static size_t CountSections(Context *ctx) {
         if (lfile->elf) {
             Elf *elf = lfile->elf;
             count += elf->shnum;
-        } else {
-            Archive *archive = lfile->archive;
-            for (size_t k = 0; k < archive->loaded_cnt; k++) {
-                Elf *mod = archive->loaded[k];
-                count += mod->shnum;
-            }
         }
     }
 
     return count;
-}
-
-static void CollectELFSections(Context *ctx, Elf *elf) {
-
-    printf("\n");
-    printf("- [%s]\n", elf->path);
-
-    // skip NULL section
-    for (size_t i = 1; i < elf->shnum; i++) {
-
-        Elf64_Shdr *shdr = &elf->shdrs[i];
-        char *name = &elf->sec_name_str_tab[shdr->sh_name];
-        printf("    [%s]\n", name);
-
-    }
 }
 
 static int sec_order_compar(const void *p1, const void *p2) {
@@ -423,23 +364,6 @@ void CTXCollectSections(Context *ctx) {
                 counter++;
             }
 
-        } else {
-
-            Archive *archive = lfile->archive;
-
-            for (size_t k = 0; k < archive->loaded_cnt; k++) {
-
-                Elf *mod = archive->loaded[k];
-
-                for (size_t n = 0; n < mod->shnum; n++) {
-
-                    Elf64_Shdr *shdr = &mod->shdrs[n];
-
-                    sec_refs[counter].elf = mod;
-                    sec_refs[counter].shdr = shdr;
-                    counter++;
-                }
-            }
         }
     }
 
@@ -468,9 +392,6 @@ size_t CTXCountModules(Context *ctx) {
         LoadedFile *lfile = ctx->lfiles[i];
         if (lfile->elf) {
             count++;
-        } else {
-            Archive *archive = lfile->archive;
-            count += archive->loaded_cnt;
         }
     }
 

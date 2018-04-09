@@ -16,8 +16,10 @@ section .text
         call main
         mov rdi, rax
         call exit
+        ; unreachable
 
     ; 60 - sys_exit: int error_code	
     exit:
         mov rax, 60
         syscall
+        ; unreachable

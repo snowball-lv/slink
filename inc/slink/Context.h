@@ -7,7 +7,6 @@
 typedef struct {
     char *path;
     Elf *elf;
-    Archive *archive;
 } LoadedFile;
 
 typedef struct {

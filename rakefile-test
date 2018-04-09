@@ -22,16 +22,6 @@ CFLAGS = [
     # "-fPIC"
 ]
 
-# /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crt1.o
-# /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crti.o
-# /usr/lib/gcc/x86_64-linux-gnu/5/crtbeginT.o
-# ...
-# /usr/lib/gcc/x86_64-linux-gnu/5/libgcc.a
-# /usr/lib/gcc/x86_64-linux-gnu/5/libgcc_eh.a
-# /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/libc.a
-# /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o
-# /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o
-
 SRCS.zip(DEPS, OBJS).each do |src, dep, obj|
     
     raise "Missing dependency file: #{dep}" unless File.exist?(dep)
