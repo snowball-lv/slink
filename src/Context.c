@@ -9,11 +9,11 @@ static void TestSupport(Elf *elf) {
 
     assert(elf->sym_cnt > 0);
 
+    // test symbols
     // skip null sym
     for (size_t i = 1; i < elf->sym_cnt; i++) {
 
         Elf64_Sym *sym = &elf->sym_tab[i];
-
         unsigned char binding = ELF64_ST_BIND(sym->st_info);
         char *name = &elf->sym_str_tab[sym->st_name];
 
@@ -43,6 +43,33 @@ static void TestSupport(Elf *elf) {
                     fprintf(stderr, "No support for section [%s]\n", ELFSpecialSectionName(sym->st_shndx));
                     exit(1);
             }
+        }
+    }
+
+
+    assert(elf->shnum > 0);
+
+    // test sections
+    // skip null section
+    for (size_t i = 1; i < elf->shnum; i++) {
+
+        Elf64_Shdr *shdr = &elf->shdrs[i];
+        char *name = &elf->sec_name_str_tab[shdr->sh_name];
+
+        // test section type support
+        switch (shdr->sh_type) {
+
+            case SHT_PROGBITS:
+            case SHT_RELA:
+            case SHT_NOBITS:
+            case SHT_STRTAB:
+            case SHT_SYMTAB:
+                break;
+
+            default:
+                fprintf(stderr, "For section [%s]\n", name);
+                fprintf(stderr, "No support for type [%s]\n", ELFSectionTypeName(shdr->sh_type));
+                exit(1);
         }
     }
 }
