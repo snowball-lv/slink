@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 set -e
-# set -x
+set -x
 
 reset
 rake
@@ -19,4 +19,9 @@ POST="${POST} /usr/lib/gcc/x86_64-linux-gnu/5/libgcc_eh.a"
 POST="${POST} /usr/lib/gcc/x86_64-linux-gnu/5/crtend.o"
 POST="${POST} /usr/lib/gcc/x86_64-linux-gnu/5/../../../x86_64-linux-gnu/crtn.o"
 
-./bin/slink ${PRE} $(find ./out/test/ -name "*.o") ${POST}
+# ./bin/slink ${PRE} $(find ./out/test/ -name "*.o") ${POST}
+
+cd out/test/
+gcc -nostdlib *.o -o main
+
+./main

@@ -7,9 +7,12 @@ SRCS = FileList["test/**/*.c"]
 DEPS = SRCS.pathmap("deps/%X.deps")
 OBJS = SRCS.pathmap("out/%X.o")
 
+ASM_SRCS = FileList["test/**/*.asm"]
+ASM_OBJS = ASM_SRCS.pathmap("out/%X.asm.o")
+
 CFLAGS = [
     "-c",
-    "-I inc",
+    # "-I inc",
     # "-O2",
     "-Wall",
     "-Wextra",
@@ -40,4 +43,15 @@ SRCS.zip(DEPS, OBJS).each do |src, dep, obj|
     end
 end
 
-task :default => OBJS
+NASM_FLAGS = [
+    "-f elf64"
+]
+
+ASM_SRCS.zip(ASM_OBJS).each do |src, obj|
+    directory(File.dirname(obj))
+    file(obj => [src, File.dirname(obj)]) do
+        sh "nasm #{NASM_FLAGS.join(" ")} #{src} -o #{obj}"
+    end
+end
+
+task :default => OBJS + ASM_OBJS

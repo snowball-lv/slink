@@ -15,8 +15,11 @@
 // 4. Apply relocations
 // 5. Output executable elf
 
-
 int main(int argc, char **argv) {
+    return 0;
+}
+
+int main_old2(int argc, char **argv) {
     printf("--- S LINK ---\n");
 
     // define linking context
