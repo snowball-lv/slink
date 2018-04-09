@@ -476,3 +476,31 @@ size_t CTXCountModules(Context *ctx) {
 
     return count;
 }
+
+Global **CTXGetUndefs(Context *ctx) {
+
+    size_t count = 0;
+    Global **undefs = 0;
+
+    for (size_t i = 0; i < ctx->undefs_cnt; i++) {
+        Global *undef = ctx->undefs[i];
+        if (!undef->defined) {
+
+            // skip WEAK symbols
+            if (undef->binding == STB_WEAK) {
+                continue;
+            }
+
+            count++;
+            undefs = realloc(undefs, count * sizeof(Global *));
+            undefs[count - 1] = undef;
+        }
+    }
+
+    // add terminating zero
+    count++;
+    undefs = realloc(undefs, count * sizeof(Global *));
+    undefs[count - 1] = 0;
+
+    return undefs;
+}

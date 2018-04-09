@@ -52,12 +52,22 @@ int main(int argc, char **argv) {
     printf("----------------------------\n");
     printf("\n");
 
-    CTXPrintUndefs(&ctx);
+    // CTXPrintUndefs(&ctx);
 
-    CTXCollectSections(&ctx);
+    // check for special undefined symbols that we
+    // might be able to handle
+    Global **undefs = CTXGetUndefs(&ctx);
+    for (size_t i = 0; undefs[i]; i++) {
+
+        Global *undef = undefs[i];
+        printf("Undef [%s]\n", undef->name);
+
+    }
+
+    // CTXCollectSections(&ctx);
     // CTXPrintSections(&ctx);
 
-    printf("%lu modules loaded\n", CTXCountModules(&ctx));
+    // printf("%lu modules loaded\n", CTXCountModules(&ctx));
 
     return 0;
 }
