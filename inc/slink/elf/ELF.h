@@ -145,6 +145,7 @@ extern int ELF_SHFS_CNT;
 char *ELFSectionTypeName(Elf64_Word sh_type);
 char *ELFSectionFlagName(Elf64_Xword sh_flag);
 char *ELFSpecialSectionName(Elf64_Word index);
+int ELFIsSectionSpecial(Elf64_Half st_shndx);
 
 char *ELFSymBindingName(unsigned char st_bind);
 char *ELFSymTypeName(unsigned char st_type);

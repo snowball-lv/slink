@@ -343,6 +343,10 @@ char *ELFSpecialSectionName(Elf64_Word index) {
     return 0;
 }
 
+int ELFIsSectionSpecial(Elf64_Half st_shndx) {
+    return ELFSpecialSectionName(st_shndx) != 0;
+}
+
 int ELFIsShNdxSpecial(Elf64_Half index) {
     switch (index) {
 

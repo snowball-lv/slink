@@ -33,6 +33,29 @@ int main(int argc, char **argv) {
     
     CTXLoadInputFiles(&ctx);
 
+    ctx.needs_sym_pass = 1;
+    while (ctx.needs_sym_pass) {
+        
+        ctx.needs_sym_pass = 0;
+
+        printf("\n");
+        printf("----------------------------\n");
+        printf("          NEW PASS\n");
+        printf("----------------------------\n");
+        printf("\n");
+
+        CTXCollectUndefs(&ctx);
+        CTXResolveUndefs(&ctx);
+    }
+
+    printf("\n");
+    printf("----------------------------\n");
+    printf("            DONE\n");
+    printf("----------------------------\n");
+    printf("\n");
+
+    CTXPrintUndefs(&ctx);
+
     return 0;
 }
 
@@ -63,7 +86,7 @@ int main_old2(int argc, char **argv) {
         printf("\n");
 
         CTXCollectUndefs(&ctx);
-        updated = CTXResolveUndefs(&ctx);
+        CTXResolveUndefs(&ctx);
     }
 
     printf("\n");

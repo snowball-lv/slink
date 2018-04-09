@@ -5,6 +5,48 @@
 #include <assert.h>
 
 
+static void TestSupport(Elf *elf) {
+
+    assert(elf->sym_cnt > 0);
+
+    // skip null sym
+    for (size_t i = 1; i < elf->sym_cnt; i++) {
+
+        Elf64_Sym *sym = &elf->sym_tab[i];
+
+        unsigned char binding = ELF64_ST_BIND(sym->st_info);
+        char *name = &elf->sym_str_tab[sym->st_name];
+
+        // test binding support
+        switch (binding) {
+
+            case STB_LOCAL:
+            case STB_GLOBAL:
+                break;
+
+            default:
+                fprintf(stderr, "For symbol [%s]\n", name);
+                fprintf(stderr, "No support for binding [%s]\n", ELFSymBindingName(binding));
+                exit(1);
+        }
+
+        // test special section support
+        if (ELFIsSectionSpecial(sym->st_shndx)) {
+            switch (sym->st_shndx) {
+
+                case SHN_ABS:
+                case SHN_UNDEF:
+                    break;
+
+                default:
+                    fprintf(stderr, "For symbol [%s]\n", name);
+                    fprintf(stderr, "No support for section [%s]\n", ELFSpecialSectionName(sym->st_shndx));
+                    exit(1);
+            }
+        }
+    }
+}
+
 void CTXLoadInputFiles(Context *ctx) {
     for (size_t i = 0; i < ctx->ifiles_cnt; i++) {
 
@@ -20,6 +62,7 @@ void CTXLoadInputFiles(Context *ctx) {
 
             Elf *elf = calloc(1, sizeof(Elf));
             ELFRead(path, elf);
+            TestSupport(elf);
             lfile->elf = elf;
 
         } else {
@@ -34,25 +77,22 @@ void CTXLoadInputFiles(Context *ctx) {
     }
 }
 
-static void AddUndef(Context *ctx, char *name, unsigned char binding) {
+static void AddUndef(Context *ctx, Elf *elf, Elf64_Sym *sym) {
 
-    assert((binding == STB_GLOBAL) || (binding == STB_WEAK));
+    assert(sym->st_shndx != SHN_XINDEX);
+    assert(sym->st_shndx == SHN_UNDEF);
+
+    unsigned char binding = ELF64_ST_BIND(sym->st_info);
+
+    // handle only globals
+    assert(binding == STB_GLOBAL);
+    
+    char *name = &elf->sym_str_tab[sym->st_name];
 
     for (size_t i = 0; i < ctx->undefs_cnt; i++) {
         Global *undef = ctx->undefs[i];
         if (strcmp(undef->name, name) == 0) {
-
             // already added to undefs
-            // use the strictest binding
-            // (global overrides weak)
-
-            if (binding == STB_GLOBAL) {
-                if (undef->binding == STB_WEAK) {
-                    printf("Overriding WEAK ref to [%s] with GLOBAL\n", name);
-                    undef->binding = STB_GLOBAL;
-                }
-            }
-
             return;
         }
     }
@@ -72,26 +112,19 @@ static void AddUndef(Context *ctx, char *name, unsigned char binding) {
     printf("Requested [%s]\n", name);
 }
 
-static void CollectELFUndefs(Context *ctx, Elf *elf) {
-    // skip null symbol
-    for (size_t i = 1; i < elf->sym_cnt; i++) {
-                    
-        Elf64_Sym *sym = &elf->sym_tab[i];
-
-        // TODO: handle SHN_XINDEX
-        assert(sym->st_shndx != SHN_XINDEX);
-
-        if (sym->st_shndx == SHN_UNDEF) {
-            char *name = &elf->sym_str_tab[sym->st_name];
-            AddUndef(ctx, name, ELF64_ST_BIND(sym->st_info));
-        }
-    }
-}
-
 void CTXCollectUndefs(Context *ctx) {
     for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
+
         LoadedFile *lfile = ctx->lfiles[i];
-        CollectELFUndefs(ctx, lfile->elf);
+        Elf *elf = lfile->elf;
+
+        // skip null symbol
+        for (size_t i = 1; i < elf->sym_cnt; i++) {
+            Elf64_Sym *sym = &elf->sym_tab[i];
+            if (sym->st_shndx == SHN_UNDEF) {
+                AddUndef(ctx, elf, sym);
+            }
+        }
     }
 }
 
@@ -105,71 +138,32 @@ static Global *FindUndef(Context *ctx, char *name) {
     return 0;
 }
 
-static int DefineUndef(Context *ctx, char *name, Elf *elf, Elf64_Sym *sym, int in_lib) {
+static void DefineUndef(Context *ctx, Elf *elf, Elf64_Sym *sym) {
+
+    assert(sym->st_shndx != SHN_UNDEF);
 
     unsigned char binding = ELF64_ST_BIND(sym->st_info);
-    assert((binding == STB_GLOBAL) || (binding == STB_WEAK));
+
+    // handle only globals
+    assert(binding == STB_GLOBAL);
+    
+    char *name = &elf->sym_str_tab[sym->st_name];
 
     Global *undef = FindUndef(ctx, name);
     if (undef == 0) {
-        return 0;
-    }
-
-    // skip if undef is WEAK and sym comes from library
-    if (undef->binding == STB_WEAK && in_lib) {
-        return 0;
+        return;
     }
 
     if (undef->defined) {
 
         // already defined by current sym
         if (undef->def == sym) {
-            return 0;
+            return;
         }
 
-        unsigned char current_binding = ELF64_ST_BIND(undef->def->st_info);
-        unsigned char new_binding = ELF64_ST_BIND(sym->st_info);
-
-        if (current_binding == STB_GLOBAL) {
-            if (new_binding == STB_GLOBAL) {
-
-                fprintf(stderr, "Multiple definitions of [%s]\n", name);
-                fprintf(stderr, "By [%s] and [%s]\n", elf->path, undef->def_by->path);
-                exit(1);
-
-            }
-        } else if (current_binding == STB_WEAK) {
-            if (new_binding == STB_GLOBAL) {
-
-                printf(
-                    "Overriding WEAK [%s] from [%s], with GLOBAL from [%s]\n",
-                    name, undef->def_by->path, elf->path);
-                
-                undef->def_by = elf;
-                undef->def = sym;
-                undef->defined = 1;
-
-                return 1;
-
-            } else if (undef->def->st_shndx != SHN_COMMON) {
-                if (sym->st_shndx == SHN_COMMON) {
-
-                    printf(
-                        "Overriding WEAK [%s] from [%s], with GLOBAL from [%s]\n",
-                        name, undef->def_by->path, elf->path);
-                    
-                    undef->def_by = elf;
-                    undef->def = sym;
-                    undef->defined = 1;
-
-                    return 1;
-                }
-            }
-        }
-
-        printf(
-            "Ignoring [%s] from [%s], in favor of [%s]\n",
-            name, elf->path, undef->def_by->path);
+        fprintf(stderr, "Multiple definitions of [%s]\n", name);
+        fprintf(stderr, "By [%s] and [%s]\n", elf->path, undef->def_by->path);
+        exit(1);
 
     } else {
 
@@ -179,62 +173,26 @@ static int DefineUndef(Context *ctx, char *name, Elf *elf, Elf64_Sym *sym, int i
         undef->def = sym;
         undef->defined = 1;
 
-        return 1;
+        ctx->needs_sym_pass = 1;
+        return;
     }
-
-    return 0;
 }
 
-static int ResolveELFUndefs(Context *ctx, Elf *elf, int in_lib) {
-
-    int updated = 0;
-
-    // skip null symbol
-    for (size_t i = 1; i < elf->sym_cnt; i++) {
-
-        Elf64_Sym *sym = &elf->sym_tab[i];
-
-        // TODO: handle SHN_XINDEX
-        assert(sym->st_shndx != SHN_XINDEX);
-
-        unsigned char binding = ELF64_ST_BIND(sym->st_info);
-
-        switch (binding) {
-            // ignore local symbols
-            case STB_LOCAL:
-                continue;
-        }
-
-        // handle only WEAK or GLOBAL symbols
-        assert((binding == STB_GLOBAL) || binding == STB_WEAK);
-
-        if (sym->st_shndx != SHN_UNDEF) {
-            char *name = &elf->sym_str_tab[sym->st_name];
-            updated |= DefineUndef(ctx, name, elf, sym, in_lib);
-            // printf("Define [%s]\n", name);
-        }
-    }
-
-    return updated;
-}
-
-int CTXResolveUndefs(Context *ctx) {
-
-    int updated = 0;
-
+void CTXResolveUndefs(Context *ctx) {
     for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
 
         LoadedFile *lfile = ctx->lfiles[i];
+        Elf *elf = lfile->elf;    
 
-        if (lfile->elf) {
-
-            Elf *elf = lfile->elf;
-            updated |= ResolveELFUndefs(ctx, elf, 0);
-
+        // skip null symbol
+        for (size_t i = 1; i < elf->sym_cnt; i++) {
+            Elf64_Sym *sym = &elf->sym_tab[i];
+            unsigned char binding = ELF64_ST_BIND(sym->st_info);
+            if (sym->st_shndx != SHN_UNDEF && binding == STB_GLOBAL) {
+                DefineUndef(ctx, elf, sym);
+            }
         }
     }
-
-    return updated;
 }
 
 void CTXPrintUndefs(Context *ctx) {

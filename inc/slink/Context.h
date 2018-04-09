@@ -36,12 +36,14 @@ typedef struct {
     SecRef *sec_refs;
     size_t sec_count;
 
+    int needs_sym_pass;
+
 } Context;
 
 void CTXLoadInputFiles(Context *ctx);
 
 void CTXCollectUndefs(Context *ctx);
-int CTXResolveUndefs(Context *ctx);
+void CTXResolveUndefs(Context *ctx);
 
 void CTXPrintUndefs(Context *ctx);
 
