@@ -261,21 +261,6 @@ void CTXPrintUndefs(Context *ctx) {
     }
 }
 
-static size_t CountSections(Context *ctx) {
-
-    size_t count = 0;
-
-    for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
-        LoadedFile *lfile = ctx->lfiles[i];
-        if (lfile->elf) {
-            Elf *elf = lfile->elf;
-            count += elf->shnum;
-        }
-    }
-
-    return count;
-}
-
 static int sec_order_compar(const void *p1, const void *p2) {
 
     const Elf *elfa = ((SecRef *) p1)->elf;
@@ -349,7 +334,23 @@ static void AssignSecAddresses(SecRef *list, size_t length, size_t base) {
 
 void CTXCollectSections(Context *ctx) {
 
-    size_t sec_count = CountSections(ctx);
+
+    size_t sec_count = 0;
+
+    for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
+        LoadedFile *lfile = ctx->lfiles[i];
+        if (lfile->elf) {
+            Elf *elf = lfile->elf;
+            for (size_t k = 0; k < elf->shnum; k++) {
+                Elf64_Shdr *shdr = &elf->shdrs[k];
+                if (!(shdr->sh_flags & SHF_ALLOC)) {
+                    continue;
+                }
+                sec_count++;
+            }
+        }
+    }
+
     SecRef *sec_refs = calloc(sec_count, sizeof(SecRef));
 
     size_t counter = 0;
@@ -365,6 +366,10 @@ void CTXCollectSections(Context *ctx) {
             for (size_t k = 0; k < elf->shnum; k++) {
 
                 Elf64_Shdr *shdr = &elf->shdrs[k];
+
+                if (!(shdr->sh_flags & SHF_ALLOC)) {
+                    continue;
+                }
 
                 sec_refs[counter].elf = elf;
                 sec_refs[counter].shdr = shdr;
