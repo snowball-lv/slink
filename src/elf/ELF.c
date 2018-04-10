@@ -553,7 +553,8 @@ void ELFPrintSymTab(FILE *file, Elf *elf) {
     }
 
     fprintf(file, "\n");
-    for (size_t i = 0; i < elf->sym_cnt; i++) {
+    // skip null symbol
+    for (size_t i = 1; i < elf->sym_cnt; i++) {
 
         Elf64_Sym *sym = &elf->sym_tab[i];
 
@@ -565,8 +566,7 @@ void ELFPrintSymTab(FILE *file, Elf *elf) {
 
         fprintf(
             file,
-            "%u [%s] [%s] [%s] 0x%lx\n",
-            elf->index,
+            "[%s] [%s] [%s] 0x%lx\n",
             path,
             &elf->sym_str_tab[sym->st_name],
             sec_name,
@@ -661,4 +661,12 @@ int IsElf(char *path) {
     fclose(file);
 
     return strncmp(ELF_MAGIC, magic, 4) == 0;
+}
+
+char *ELFRelTypeName(unsigned type) {
+    switch (type) {
+        case 2: return "R_X86_64_PC32";
+        case 10: return "R_X86_64_32";
+    }
+    return "{unknown reloc type}";
 }

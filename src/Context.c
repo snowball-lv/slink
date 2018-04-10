@@ -339,15 +339,13 @@ void CTXCollectSections(Context *ctx) {
 
     for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
         LoadedFile *lfile = ctx->lfiles[i];
-        if (lfile->elf) {
-            Elf *elf = lfile->elf;
-            for (size_t k = 0; k < elf->shnum; k++) {
-                Elf64_Shdr *shdr = &elf->shdrs[k];
-                if (!(shdr->sh_flags & SHF_ALLOC)) {
-                    continue;
-                }
-                sec_count++;
+        Elf *elf = lfile->elf;
+        for (size_t k = 0; k < elf->shnum; k++) {
+            Elf64_Shdr *shdr = &elf->shdrs[k];
+            if (!(shdr->sh_flags & SHF_ALLOC)) {
+                continue;
             }
+            sec_count++;
         }
     }
 
@@ -359,30 +357,26 @@ void CTXCollectSections(Context *ctx) {
 
         LoadedFile *lfile = ctx->lfiles[i];
 
-        if (lfile->elf) {
+        Elf *elf = lfile->elf;
 
-            Elf *elf = lfile->elf;
+        for (size_t k = 0; k < elf->shnum; k++) {
 
-            for (size_t k = 0; k < elf->shnum; k++) {
+            Elf64_Shdr *shdr = &elf->shdrs[k];
 
-                Elf64_Shdr *shdr = &elf->shdrs[k];
-
-                if (!(shdr->sh_flags & SHF_ALLOC)) {
-                    continue;
-                }
-
-                sec_refs[counter].elf = elf;
-                sec_refs[counter].shdr = shdr;
-                counter++;
+            if (!(shdr->sh_flags & SHF_ALLOC)) {
+                continue;
             }
 
+            sec_refs[counter].elf = elf;
+            sec_refs[counter].shdr = shdr;
+            counter++;
         }
     }
 
     assert(counter == sec_count);
 
     OrderSecList(sec_refs, sec_count);
-    AssignSecAddresses(sec_refs, sec_count, 0);
+    AssignSecAddresses(sec_refs, sec_count, 0x400000);
 
     ctx->sec_count = sec_count;
     ctx->sec_refs = sec_refs;
@@ -436,4 +430,104 @@ Global **CTXGetUndefs(Context *ctx) {
     undefs[count - 1] = 0;
 
     return undefs;
+}
+
+
+static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Rela *rela) {
+
+    unsigned type = ELF64_R_TYPE(rela->r_info);
+
+    printf("Processing reloc %u [%s]\n", type, ELFRelTypeName(type));
+
+    switch (type) {
+
+        case R_X86_64_PC32:
+            break;
+
+        case R_X86_64_32:
+            break;
+
+        default:
+            fprintf(
+                stderr, 
+                "Can't handle relocs of type %u [%s]\n",
+                type, ELFRelTypeName(type));
+            exit(1);
+    }
+}
+
+static void ProcessRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr) {
+
+    assert(shdr->sh_type == SHT_RELA);
+
+    char *name = &elf->sec_name_str_tab[shdr->sh_name];
+    printf("Processing relocs in [%s] [%s]\n", name, elf->path);
+
+    assert(shdr->sh_entsize == sizeof(Elf64_Rela));
+
+    for (size_t off = 0; off < shdr->sh_size; off += shdr->sh_entsize) {
+        Elf64_Rela *rela = (Elf64_Rela *) &elf->raw[shdr->sh_offset + off];
+        ProcessSingleRelA(ctx, elf, shdr, rela);
+    }
+}
+
+static void ProcessELFRelocations(Context *ctx, Elf *elf) {
+    for (size_t i = 0; i < elf->shnum; i++) {
+        Elf64_Shdr *shdr = &elf->shdrs[i];
+        if (shdr->sh_type == SHT_RELA) {
+            ProcessRelA(ctx, elf, shdr);
+        }
+    }
+}
+
+void CTXProcessRelocations(Context *ctx) {
+    for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
+        LoadedFile *lfile = ctx->lfiles[i];
+        Elf *elf = lfile->elf;
+        ProcessELFRelocations(ctx, elf);
+    }
+}
+
+static void LayOutELFSymbols(Context *ctx, Elf *elf) {
+    // skip null symbol
+    for (size_t i = 0; i < elf->sym_cnt; i++) {
+        
+        Elf64_Sym *sym = &elf->sym_tab[i];
+
+        if (ELFIsSectionSpecial(sym->st_shndx)) {
+
+            switch (sym->st_shndx) {
+                case SHN_ABS: break;
+                case SHN_UNDEF: break;
+                default:
+                    fprintf(
+                        stderr,
+                        "Can't handle shndx: [%s]\n",
+                        ELFSpecialSectionName(sym->st_shndx));
+                    exit(1);
+            }
+
+        } else {
+
+            Elf64_Shdr *shdr = &elf->shdrs[sym->st_shndx];
+            sym->st_value += shdr->sh_addr;
+
+        }
+    }
+}
+
+void CTXLayOutSymbols(Context *ctx) {
+    for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
+        LoadedFile *lfile = ctx->lfiles[i];
+        Elf *elf = lfile->elf;
+        LayOutELFSymbols(ctx, elf);
+    }
+}
+
+void CTXPrintSymbols(Context *ctx) {
+    for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
+        LoadedFile *lfile = ctx->lfiles[i];
+        Elf *elf = lfile->elf;
+        ELFPrintSymTab(stdout, elf);
+    }
 }

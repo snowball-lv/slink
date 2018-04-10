@@ -53,3 +53,8 @@ void CTXPrintSections(Context *ctx);
 size_t CTXCountModules(Context *ctx);
 
 Global **CTXGetUndefs(Context *ctx);
+
+void CTXProcessRelocations(Context *ctx);
+
+void CTXLayOutSymbols(Context *ctx);
+void CTXPrintSymbols(Context *ctx);

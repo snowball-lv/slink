@@ -61,6 +61,16 @@ int main(int argc, char **argv) {
 
     printf("%lu modules loaded\n", CTXCountModules(&ctx));
 
+    CTXPrintSymbols(&ctx);
+
+    printf("\n");
+    printf("Laying out symbols\n");
+
+    CTXLayOutSymbols(&ctx);
+    CTXPrintSymbols(&ctx);
+
+    // CTXProcessRelocations(&ctx);
+
     return 0;
 }
 

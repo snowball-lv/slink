@@ -169,6 +169,8 @@ char *ELFSegmentPermissionFlagName(Elf64_Word p_flags);
 
 int ELFIsShNdxSpecial(Elf64_Half index);
 
+char *ELFRelTypeName(unsigned type);
+
 #define SHT_NULL            0
 #define SHT_PROGBITS        1
 #define SHT_SYMTAB          2
