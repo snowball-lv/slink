@@ -435,17 +435,85 @@ Global **CTXGetUndefs(Context *ctx) {
 
 static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Rela *rela) {
 
+    Elf64_Shdr *sym_tab_sh = &elf->shdrs[shdr->sh_link];
+    assert(sym_tab_sh->sh_type == SHT_SYMTAB);
+
+    Elf64_Sym *sym_tab = (Elf64_Sym *) &elf->raw[sym_tab_sh->sh_offset];
+
+    Elf64_Shdr *sym_str_tab_sh = &elf->shdrs[sym_tab_sh->sh_link];
+    assert(sym_str_tab_sh->sh_type == SHT_STRTAB);
+
+    char *sym_str_tab = &elf->raw[sym_str_tab_sh->sh_offset];
+
     unsigned type = ELF64_R_TYPE(rela->r_info);
 
     printf("Processing reloc %u [%s]\n", type, ELFRelTypeName(type));
 
+    /*
+        S - Represents the value of the symbol whose index resides in 
+        the relocation entry.
+
+        A - Represents the addend used to compute the value of the
+        relocatable field.
+
+        P - Represents the place (section offset or address) of the 
+        storage unit being relocated (computed using r_offset).
+    */
+
+    size_t sym_index = ELF64_R_SYM(rela->r_info);
+    Elf64_Sym *sym = &sym_tab[sym_index];
+    char *name = &sym_str_tab[sym->st_name];
+
+    if (sym->st_shndx == SHN_UNDEF) {
+
+        Global *undef = FindUndef(ctx, name);
+        assert(undef != 0);
+        assert(undef->def != 0);
+
+        sym = undef->def;
+    }
+
+    Elf64_Shdr *target_sh = &elf->shdrs[shdr->sh_info];
+    char *target_data = &elf->raw[target_sh->sh_offset];
+
     switch (type) {
 
-        case R_X86_64_PC32:
-            break;
+        // S + A - P
+        // word32
+        case R_X86_64_PC32: {
+            
+            assert(sym->st_value <= INT32_MAX);
+            int32_t value = (int32_t) sym->st_value;
 
-        case R_X86_64_32:
+            assert(rela->r_addend >= INT32_MIN);
+            assert(rela->r_addend <= INT32_MAX);
+            value += (int32_t) rela->r_addend;
+
+            assert(rela->r_offset <= INT32_MAX);
+            value -= (int32_t) rela->r_offset;
+
+            int32_t *ptr = &target_data[rela->r_offset];
+            *ptr = value;
+
             break;
+        }
+
+        // S + A
+        // word32
+        case R_X86_64_32: {
+
+            assert(sym->st_value <= INT32_MAX);
+            int32_t value = (int32_t) sym->st_value;
+
+            assert(rela->r_addend >= INT32_MIN);
+            assert(rela->r_addend <= INT32_MAX);
+            value += (int32_t) rela->r_addend;
+
+            int32_t *ptr = &target_data[rela->r_offset];
+            *ptr = value;
+            
+            break;
+        }
 
         default:
             fprintf(

@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     CTXLayOutSymbols(&ctx);
     CTXPrintSymbols(&ctx);
 
-    // CTXProcessRelocations(&ctx);
+    CTXProcessRelocations(&ctx);
 
     return 0;
 }
