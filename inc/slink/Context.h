@@ -4,6 +4,8 @@
 #include <slink/elf/Archive.h>
 
 
+#define PAGE_SIZE   4096
+
 typedef struct {
     char *path;
     Elf *elf;
@@ -58,3 +60,5 @@ void CTXProcessRelocations(Context *ctx);
 
 void CTXLayOutSymbols(Context *ctx);
 void CTXPrintSymbols(Context *ctx);
+
+void CTXCreateExecutable(Context *ctx, char *name);

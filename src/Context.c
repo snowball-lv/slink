@@ -313,10 +313,18 @@ static void AssignSecAddresses(SecRef *list, size_t length, size_t base) {
 
     size_t addr = base;
 
+    uintmax_t last_flags = 0;
+
     for (size_t i = 0 ; i < length; i++) {
 
         SecRef *ref = &list[i];
         Elf64_Shdr *shdr = ref->shdr;
+
+        if (shdr->sh_flags != last_flags) {
+            addr += PAGE_SIZE - 1;
+            addr = (addr / PAGE_SIZE) * PAGE_SIZE;
+            last_flags = shdr->sh_flags;
+        }
 
         assert((shdr->sh_addr == 0) && "Can't handle non 0 base sections.");
 
@@ -492,7 +500,7 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
             assert(rela->r_offset <= INT32_MAX);
             value -= (int32_t) rela->r_offset;
 
-            int32_t *ptr = &target_data[rela->r_offset];
+            int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
             *ptr = value;
 
             break;
@@ -509,9 +517,9 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
             assert(rela->r_addend <= INT32_MAX);
             value += (int32_t) rela->r_addend;
 
-            int32_t *ptr = &target_data[rela->r_offset];
+            int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
             *ptr = value;
-            
+
             break;
         }
 
@@ -598,4 +606,84 @@ void CTXPrintSymbols(Context *ctx) {
         Elf *elf = lfile->elf;
         ELFPrintSymTab(stdout, elf);
     }
+}
+
+typedef struct {
+    size_t size;
+    char *data;
+} Buffer;
+
+static Buffer ReadFile(char *name) {
+    FILE *in = fopen(name, "rb");
+    assert(in);
+    Buffer buffer;
+    fseek(in, 0, SEEK_END);
+    long len = ftell(in);
+    assert(len > 0);
+    buffer.size = (size_t) len;
+    rewind(in);
+    buffer.data = malloc(buffer.size);
+    fread(buffer.data, 1, buffer.size, in);
+    fclose(in);
+    return buffer;
+}
+
+void CTXCreateExecutable(Context *ctx, char *name) {
+    FILE *out = fopen(name, "wb");
+    assert(out);
+
+    ELFIdent ident = {
+        .FileIdent      = { 0x7f, 'E', 'L', 'F' },
+        .FileClass      = ELFCLASS64,
+        .DataEncoding   = ELFDATA2LSB,
+        .FileVersion    = EV_CURRENT,
+        .OSABIIdent     = 0,
+        .ABIVersion     = 0
+    };
+
+    Elf64_Ehdr ehdr = {
+
+        .e_type         = ET_EXEC,
+        .e_machine      = EM_X86_64,
+        .e_version      = EV_CURRENT,
+
+        .e_entry        = 0x400000,
+
+        .e_phoff        = sizeof(Elf64_Ehdr),
+        .e_phnum        = 1,
+        .e_phentsize    = sizeof(Elf64_Phdr),
+
+        .e_ehsize       = sizeof(Elf64_Ehdr),
+
+        .e_flags        = 0,
+        .e_shoff        = 0,
+        .e_shnum        = 0,
+        .e_shentsize    = 0,
+        .e_shstrndx     = SHN_UNDEF,
+    };
+
+    memcpy(ehdr.e_ident, &ident, EI_NIDENT);
+
+    fwrite(&ehdr, sizeof(Elf64_Ehdr), 1, out);
+
+    Buffer buffer = ReadFile("stub.bin");
+    printf("stub size %lu\n", buffer.size);
+
+    Elf64_Phdr phdr = {
+        .p_type     = PT_LOAD,
+        .p_flags    = PF_R | PF_X,
+        .p_offset   = PAGE_SIZE,
+        .p_vaddr    = 0x400000,
+        .p_paddr    = 0,
+        .p_filesz   = buffer.size,
+        .p_memsz    = buffer.size,
+        .p_align    = PAGE_SIZE,
+    }; 
+
+    fwrite(&phdr, sizeof(Elf64_Phdr), 1, out);
+    fseek(out, PAGE_SIZE, SEEK_SET);
+
+    fwrite(buffer.data, 1, buffer.size, out);
+
+    fclose(out);
 }

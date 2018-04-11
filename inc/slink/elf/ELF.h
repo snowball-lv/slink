@@ -222,3 +222,8 @@ char *ELFRelTypeName(unsigned type);
 
 #define STB_GLOBAL      1
 #define STB_WEAK        2
+
+#define ET_EXEC     2
+#define PT_LOAD     1
+#define PF_X        0x1
+#define PF_R        0x4
