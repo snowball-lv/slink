@@ -508,7 +508,7 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
             value += (int32_t) rela->r_addend;
 
             assert(rela->r_offset <= INT32_MAX);
-            value -= (int32_t) rela->r_offset;
+            value -= (int32_t) (rela->r_offset + shdr->sh_addr);
 
             int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
             *ptr = value;
@@ -772,14 +772,22 @@ void CTXGroupIntoSegments(Context *ctx) {
 
             Elf64_Phdr *phdr = calloc(1, sizeof(Elf64_Phdr));
                 
-            phdr->p_type     = PT_LOAD,
-            phdr->p_flags    = PF_R | PF_W | PF_X,
-            phdr->p_offset   = 0,
-            phdr->p_vaddr    = shdr->sh_addr,
-            phdr->p_paddr    = 0,
-            phdr->p_filesz   = 0,
-            phdr->p_memsz    = 0,
-            phdr->p_align    = PAGE_SIZE,
+            phdr->p_type     = PT_LOAD;
+            phdr->p_flags    = PF_R;
+            phdr->p_offset   = 0;
+            phdr->p_vaddr    = shdr->sh_addr;
+            phdr->p_paddr    = 0;
+            phdr->p_filesz   = 0;
+            phdr->p_memsz    = 0;
+            phdr->p_align    = PAGE_SIZE;
+
+            if (shdr->sh_flags & SHF_WRITE) {
+                phdr->p_flags |= PF_W;
+            }
+
+            if (shdr->sh_flags & SHF_EXECINSTR) {
+                phdr->p_flags |= PF_X;
+            }
 
             seg_ref->phdr = phdr;
             seg_ref->sec_refs = 0;
