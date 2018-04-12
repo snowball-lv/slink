@@ -508,7 +508,7 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
             value += (int32_t) rela->r_addend;
 
             assert(rela->r_offset <= INT32_MAX);
-            value -= (int32_t) (rela->r_offset + shdr->sh_addr);
+            value -= (int32_t) rela->r_offset;
 
             int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
             *ptr = value;
@@ -528,6 +528,23 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
             value += (int32_t) rela->r_addend;
 
             int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
+            *ptr = value;
+
+            break;
+        }
+
+        // S + A
+        // word64
+        case R_X86_64_64: {
+            
+            assert(sym->st_value <= INT64_MAX);
+            int64_t value = (int64_t) sym->st_value;
+
+            assert(rela->r_addend >= INT64_MIN);
+            assert(rela->r_addend <= INT64_MAX);
+            value += (int64_t) rela->r_addend;
+
+            int64_t *ptr = (int64_t *) &target_data[rela->r_offset];
             *ptr = value;
 
             break;

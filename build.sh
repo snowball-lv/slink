@@ -6,7 +6,8 @@ set -e
 reset
 rake
 
-./bin/slink $(find ./out/test/ -name "*.o")
+# ./bin/slink $(find ./out/test/ -name "*.o")
+./bin/slink stub.o
 
 # cd out/test/
 # gcc -nostdlib *.o -o main

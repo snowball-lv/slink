@@ -547,10 +547,12 @@ void ELFPrintSymTab(FILE *file, Elf *elf) {
         return;
     }
 
-    char *path = strrchr(elf->path, '/') + 1;
-    if (path == 0) {
-        path = elf->path;
-    }
+    // char *path = strrchr(elf->path, '/') + 1;
+    // if (path == 0) {
+    //     path = elf->path;
+    // }
+    
+    char *path = elf->path;
 
     fprintf(file, "\n");
     // skip null symbol
@@ -667,6 +669,7 @@ char *ELFRelTypeName(unsigned type) {
     switch (type) {
         case 2: return "R_X86_64_PC32";
         case 10: return "R_X86_64_32";
+        case 1: return "R_X86_64_64";
     }
     return "{unknown reloc type}";
 }
