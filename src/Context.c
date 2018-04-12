@@ -508,7 +508,7 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
             value += (int32_t) rela->r_addend;
 
             assert(rela->r_offset <= INT32_MAX);
-            value -= (int32_t) rela->r_offset;
+            value -= (int32_t) (rela->r_offset);
 
             int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
             *ptr = value;
@@ -568,8 +568,20 @@ static void ProcessRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr) {
 
     assert(shdr->sh_entsize == sizeof(Elf64_Rela));
 
+    int first_rel = 1;
+    size_t last_rel_offset = 0;
+
     for (size_t off = 0; off < shdr->sh_size; off += shdr->sh_entsize) {
+
         Elf64_Rela *rela = (Elf64_Rela *) &elf->raw[shdr->sh_offset + off];
+
+        if (!first_rel && rela->r_offset == last_rel_offset) {
+            fprintf(stderr, "Consecutive reloation are not supported\n");
+            exit(1);
+        }
+        first_rel = 0;
+        last_rel_offset = rela->r_offset;
+
         ProcessSingleRelA(ctx, elf, shdr, rela);
     }
 }
@@ -578,6 +590,7 @@ static void ProcessELFRelocations(Context *ctx, Elf *elf) {
     for (size_t i = 0; i < elf->shnum; i++) {
         Elf64_Shdr *shdr = &elf->shdrs[i];
         if (shdr->sh_type == SHT_RELA) {
+            ELFPrintRelocs(stdout, elf, shdr);
             ProcessRelA(ctx, elf, shdr);
         }
     }

@@ -626,10 +626,12 @@ void ELFPrintRelocs(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
 
     assert(shdr->sh_type == SHT_RELA);
 
-    char *path = strrchr(elf->path, '/') + 1;
-    if (path == 0) {
-        path = elf->path;
-    }
+    // char *path = strrchr(elf->path, '/') + 1;
+    // if (path == 0) {
+    //     path = elf->path;
+    // }
+
+    char *path = elf->path;
 
     for (size_t off = 0; off < shdr->sh_size; off += shdr->sh_entsize) {
 
