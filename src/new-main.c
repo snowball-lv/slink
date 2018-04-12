@@ -71,6 +71,7 @@ int main(int argc, char **argv) {
 
     CTXProcessRelocations(&ctx);
 
+    CTXGroupIntoSegments(&ctx);
     CTXCreateExecutable(&ctx, "hello_world");
 
     return 0;

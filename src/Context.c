@@ -309,6 +309,17 @@ static void OrderSecList(SecRef *list, size_t length) {
     qsort(list, length, sizeof(SecRef), sec_order_compar);
 }
 
+static size_t Align(size_t addr, size_t alignment) {
+    assert(alignment > 1);
+    addr += alignment - 1;
+    addr = (addr / alignment) * alignment;
+    return addr;
+}
+
+static size_t Align4k(size_t addr) {
+    return Align(addr, PAGE_SIZE);
+}
+
 static void AssignSecAddresses(SecRef *list, size_t length, size_t base) {
 
     size_t addr = base;
@@ -320,20 +331,19 @@ static void AssignSecAddresses(SecRef *list, size_t length, size_t base) {
         SecRef *ref = &list[i];
         Elf64_Shdr *shdr = ref->shdr;
 
+        // start of new segment
         if (shdr->sh_flags != last_flags) {
-            addr += PAGE_SIZE - 1;
-            addr = (addr / PAGE_SIZE) * PAGE_SIZE;
+            addr = Align4k(addr);
             last_flags = shdr->sh_flags;
         }
 
         assert((shdr->sh_addr == 0) && "Can't handle non 0 base sections.");
 
         if (shdr->sh_addralign > 1) {
-            if ((addr % shdr->sh_addralign) != 0) {
-                addr += shdr->sh_addralign;
-                addr = (addr / shdr->sh_addralign) * shdr->sh_addralign;
-            }
+            addr = Align(addr, shdr->sh_addralign);
         }
+
+        assert((addr % shdr->sh_addralign) == 0);
 
         shdr->sh_addr = addr;
         addr += shdr->sh_size;
@@ -628,9 +638,30 @@ static Buffer ReadFile(char *name) {
     return buffer;
 }
 
+static Elf64_Sym *FindSymbol(Context *ctx, char *name) {
+    for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
+        LoadedFile *lfile = ctx->lfiles[i];
+        Elf *elf = lfile->elf;
+        for (size_t k = 0; k < elf->sym_cnt; k++) {
+            Elf64_Sym *sym = &elf->sym_tab[k];
+            if (ELF64_ST_BIND(sym->st_info) == STB_GLOBAL) {
+                char *sym_name = &elf->sym_str_tab[sym->st_name];
+                if (strcmp(sym_name, name) == 0) {
+                    return sym;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 void CTXCreateExecutable(Context *ctx, char *name) {
+
     FILE *out = fopen(name, "wb");
     assert(out);
+
+    Elf64_Sym *entry = FindSymbol(ctx, "_start");
+    assert(entry != 0);
 
     ELFIdent ident = {
         .FileIdent      = { 0x7f, 'E', 'L', 'F' },
@@ -647,10 +678,10 @@ void CTXCreateExecutable(Context *ctx, char *name) {
         .e_machine      = EM_X86_64,
         .e_version      = EV_CURRENT,
 
-        .e_entry        = 0x400000,
+        .e_entry        = entry->st_value,
 
         .e_phoff        = sizeof(Elf64_Ehdr),
-        .e_phnum        = 1,
+        .e_phnum        = (short unsigned) ctx->seg_count,
         .e_phentsize    = sizeof(Elf64_Phdr),
 
         .e_ehsize       = sizeof(Elf64_Ehdr),
@@ -666,24 +697,109 @@ void CTXCreateExecutable(Context *ctx, char *name) {
 
     fwrite(&ehdr, sizeof(Elf64_Ehdr), 1, out);
 
-    Buffer buffer = ReadFile("stub.bin");
-    printf("stub size %lu\n", buffer.size);
+    size_t data_off = 0;
+    data_off += sizeof(Elf64_Ehdr);
+    data_off += ctx->seg_count * sizeof(Elf64_Phdr);
 
-    Elf64_Phdr phdr = {
-        .p_type     = PT_LOAD,
-        .p_flags    = PF_R | PF_X,
-        .p_offset   = PAGE_SIZE,
-        .p_vaddr    = 0x400000,
-        .p_paddr    = 0,
-        .p_filesz   = buffer.size,
-        .p_memsz    = buffer.size,
-        .p_align    = PAGE_SIZE,
-    }; 
+    data_off = Align4k(data_off);
 
-    fwrite(&phdr, sizeof(Elf64_Phdr), 1, out);
-    fseek(out, PAGE_SIZE, SEEK_SET);
+    for (size_t i = 0; i < ctx->seg_count; i++) {
 
-    fwrite(buffer.data, 1, buffer.size, out);
+        SegRef *seg_ref = &ctx->seg_refs[i];
+        Elf64_Phdr *phdr = seg_ref->phdr;
 
+        phdr->p_offset = data_off;
+        data_off += phdr->p_filesz;
+        data_off = Align4k(data_off);
+
+        printf("%lu + %lu (%lu)\n", phdr->p_offset, phdr->p_filesz, phdr->p_memsz);
+
+        fwrite(phdr, sizeof(Elf64_Phdr), 1, out);
+    }
+
+    for (size_t i = 0; i < ctx->seg_count; i++) {
+
+        SegRef *seg_ref = &ctx->seg_refs[i];
+        Elf64_Phdr *phdr = seg_ref->phdr;
+
+        fseek(out, (long) phdr->p_offset, SEEK_SET);
+
+        for (size_t k = 0; k < seg_ref->sec_count; k++) {
+
+            SecRef *sec_ref = &seg_ref->sec_refs[k];
+            Elf64_Shdr *shdr = sec_ref->shdr;
+
+            if (shdr->sh_type == SHT_PROGBITS) {
+                char *data = &sec_ref->elf->raw[shdr->sh_offset];
+                fwrite(data, 1, shdr->sh_size, out);
+            }
+        }
+    }
+
+    fputc(0, out);
     fclose(out);
+}
+
+void CTXGroupIntoSegments(Context *ctx) {
+
+    uintmax_t last_flags = 0;
+
+    for (size_t i = 0; i < ctx->sec_count; i++) {
+        
+        SecRef *ref = &ctx->sec_refs[i];
+        Elf64_Shdr *shdr = ref->shdr;
+
+        switch (shdr->sh_type) {
+
+            case SHT_PROGBITS:
+            case SHT_NOBITS:
+                break;
+
+            default:
+                fprintf(
+                    stderr,
+                    "Can't output section [%s] to executable\n",
+                    ELFSectionTypeName(shdr->sh_type));
+                exit(1);
+        }
+
+        if (last_flags != shdr->sh_flags) {
+
+            ctx->seg_count++;
+            ctx->seg_refs = realloc(ctx->seg_refs, ctx->seg_count * sizeof(SegRef));
+
+            SegRef *seg_ref = &ctx->seg_refs[ctx->seg_count - 1];
+
+            Elf64_Phdr *phdr = calloc(1, sizeof(Elf64_Phdr));
+                
+            phdr->p_type     = PT_LOAD,
+            phdr->p_flags    = PF_R | PF_W | PF_X,
+            phdr->p_offset   = 0,
+            phdr->p_vaddr    = shdr->sh_addr,
+            phdr->p_paddr    = 0,
+            phdr->p_filesz   = 0,
+            phdr->p_memsz    = 0,
+            phdr->p_align    = PAGE_SIZE,
+
+            seg_ref->phdr = phdr;
+            seg_ref->sec_refs = 0;
+            seg_ref->sec_count = 0;
+
+            last_flags = shdr->sh_flags;
+        }
+
+        SegRef *seg_ref = &ctx->seg_refs[ctx->seg_count - 1];
+
+        Elf64_Phdr *phdr = seg_ref->phdr;
+        phdr->p_memsz += shdr->sh_size;
+        if (shdr->sh_type == SHT_PROGBITS) {
+            phdr->p_filesz += shdr->sh_size;
+        }
+
+        seg_ref->sec_count++;
+        seg_ref->sec_refs = realloc(seg_ref->sec_refs, seg_ref->sec_count * sizeof(SecRef));
+        seg_ref->sec_refs[seg_ref->sec_count - 1] = *ref;
+    }
+
+    printf("Segments %lu\n", ctx->seg_count);
 }

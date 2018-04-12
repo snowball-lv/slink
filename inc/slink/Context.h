@@ -25,6 +25,12 @@ typedef struct {
 } SecRef;
 
 typedef struct {
+    Elf64_Phdr *phdr;
+    SecRef *sec_refs;
+    size_t sec_count;
+} SegRef;
+
+typedef struct {
 
     char **ifiles;
     size_t ifiles_cnt;
@@ -39,6 +45,9 @@ typedef struct {
     size_t sec_count;
 
     int needs_sym_pass;
+
+    SegRef *seg_refs;
+    size_t seg_count;
 
 } Context;
 
@@ -62,3 +71,5 @@ void CTXLayOutSymbols(Context *ctx);
 void CTXPrintSymbols(Context *ctx);
 
 void CTXCreateExecutable(Context *ctx, char *name);
+
+void CTXGroupIntoSegments(Context *ctx);
