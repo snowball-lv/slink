@@ -501,25 +501,14 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
         case R_X86_64_PC32: {
             
             assert(sym->st_value <= INT32_MAX);
-            // int32_t value = (int32_t) sym->st_value;
-            int32_t S = (int32_t) sym->st_value;
+            int32_t value = (int32_t) sym->st_value;
 
             assert(rela->r_addend >= INT32_MIN);
             assert(rela->r_addend <= INT32_MAX);
-            // value += (int32_t) rela->r_addend;
-            int32_t A = (int32_t) rela->r_addend;
+            value += (int32_t) rela->r_addend;
 
             assert(rela->r_offset <= INT32_MAX);
-            // value -= (int32_t) (target_sh->sh_addr + rela->r_offset);
-            int32_t P = (int32_t) (target_sh->sh_addr + rela->r_offset);
-
-            int32_t value = S + A - P;
-
-            printf("--- 0x%lx\n", target_sh->sh_addr);
-            printf("--- 0x%lx\n", target_sh->sh_addr + rela->r_offset);
-            printf("--- 0x%lx\n", sym->st_value);
-            printf("--- 0x%lx\n", sym->st_value + rela->r_addend);
-            printf("--- 0x%lx\n", value);
+            value -= (int32_t) (target_sh->sh_addr + rela->r_offset);
 
             int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
             *ptr = value;
