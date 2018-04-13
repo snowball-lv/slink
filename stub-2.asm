@@ -5,7 +5,8 @@ bits 64
 
 section .text
 
-global exit
-exit:
-    mov rax, 60
+global write
+write:
+    mov rax, 1
     syscall
+    ret

@@ -501,14 +501,25 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
         case R_X86_64_PC32: {
             
             assert(sym->st_value <= INT32_MAX);
-            int32_t value = (int32_t) sym->st_value;
+            // int32_t value = (int32_t) sym->st_value;
+            int32_t S = (int32_t) sym->st_value;
 
             assert(rela->r_addend >= INT32_MIN);
             assert(rela->r_addend <= INT32_MAX);
-            value += (int32_t) rela->r_addend;
+            // value += (int32_t) rela->r_addend;
+            int32_t A = (int32_t) rela->r_addend;
 
             assert(rela->r_offset <= INT32_MAX);
-            value -= (int32_t) (rela->r_offset);
+            // value -= (int32_t) (target_sh->sh_addr + rela->r_offset);
+            int32_t P = (int32_t) (target_sh->sh_addr + rela->r_offset);
+
+            int32_t value = S + A - P;
+
+            printf("--- 0x%lx\n", target_sh->sh_addr);
+            printf("--- 0x%lx\n", target_sh->sh_addr + rela->r_offset);
+            printf("--- 0x%lx\n", sym->st_value);
+            printf("--- 0x%lx\n", sym->st_value + rela->r_addend);
+            printf("--- 0x%lx\n", value);
 
             int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
             *ptr = value;
@@ -516,22 +527,22 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
             break;
         }
 
-        // S + A
-        // word32
-        case R_X86_64_32: {
+        // // S + A
+        // // word32
+        // case R_X86_64_32: {
 
-            assert(sym->st_value <= INT32_MAX);
-            int32_t value = (int32_t) sym->st_value;
+        //     assert(sym->st_value <= INT32_MAX);
+        //     int32_t value = (int32_t) sym->st_value;
 
-            assert(rela->r_addend >= INT32_MIN);
-            assert(rela->r_addend <= INT32_MAX);
-            value += (int32_t) rela->r_addend;
+        //     assert(rela->r_addend >= INT32_MIN);
+        //     assert(rela->r_addend <= INT32_MAX);
+        //     value += (int32_t) rela->r_addend;
 
-            int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
-            *ptr = value;
+        //     int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
+        //     *ptr = value;
 
-            break;
-        }
+        //     break;
+        // }
 
         // S + A
         // word64
@@ -752,17 +763,29 @@ void CTXCreateExecutable(Context *ctx, char *name) {
         SegRef *seg_ref = &ctx->seg_refs[i];
         Elf64_Phdr *phdr = seg_ref->phdr;
 
-        fseek(out, (long) phdr->p_offset, SEEK_SET);
+        long offset = phdr->p_offset;
 
         for (size_t k = 0; k < seg_ref->sec_count; k++) {
 
             SecRef *sec_ref = &seg_ref->sec_refs[k];
+            Elf *elf = sec_ref->elf;
             Elf64_Shdr *shdr = sec_ref->shdr;
+            char *name = &elf->sec_name_str_tab[shdr->sh_name];
+
+            printf("%lu:%lu [%s] [%s]\n", i, k, name, elf->path);
+
+            if (shdr->sh_addralign > 1) {
+                offset = Align(offset, shdr->sh_addralign);
+            }
+
+            fseek(out, offset, SEEK_SET);
 
             if (shdr->sh_type == SHT_PROGBITS) {
                 char *data = &sec_ref->elf->raw[shdr->sh_offset];
                 fwrite(data, 1, shdr->sh_size, out);
             }
+            
+            offset += shdr->sh_size;
         }
     }
 
@@ -794,6 +817,8 @@ void CTXGroupIntoSegments(Context *ctx) {
         }
 
         if (last_flags != shdr->sh_flags) {
+
+            assert((shdr->sh_addr % PAGE_SIZE) == 0);
 
             ctx->seg_count++;
             ctx->seg_refs = realloc(ctx->seg_refs, ctx->seg_count * sizeof(SegRef));
@@ -829,8 +854,19 @@ void CTXGroupIntoSegments(Context *ctx) {
         SegRef *seg_ref = &ctx->seg_refs[ctx->seg_count - 1];
 
         Elf64_Phdr *phdr = seg_ref->phdr;
+
+        if (shdr->sh_addralign > 1) {
+            phdr->p_memsz = Align(phdr->p_memsz, shdr->sh_addralign);
+        }
+
         phdr->p_memsz += shdr->sh_size;
+
         if (shdr->sh_type == SHT_PROGBITS) {
+            
+            if (shdr->sh_addralign > 1) {
+                phdr->p_filesz = Align(phdr->p_filesz, shdr->sh_addralign);
+            }
+
             phdr->p_filesz += shdr->sh_size;
         }
 
