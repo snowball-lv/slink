@@ -3,6 +3,6 @@
 
 
 int main() {
-    print("Hello world!\n");
+    print("Hello world! From pure C!\n");
     return 0;
 }

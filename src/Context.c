@@ -527,22 +527,22 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
             break;
         }
 
-        // // S + A
-        // // word32
-        // case R_X86_64_32: {
+        // S + A
+        // word32
+        case R_X86_64_32: {
 
-        //     assert(sym->st_value <= INT32_MAX);
-        //     int32_t value = (int32_t) sym->st_value;
+            assert(sym->st_value <= INT32_MAX);
+            int32_t value = (int32_t) sym->st_value;
 
-        //     assert(rela->r_addend >= INT32_MIN);
-        //     assert(rela->r_addend <= INT32_MAX);
-        //     value += (int32_t) rela->r_addend;
+            assert(rela->r_addend >= INT32_MIN);
+            assert(rela->r_addend <= INT32_MAX);
+            value += (int32_t) rela->r_addend;
 
-        //     int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
-        //     *ptr = value;
+            int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
+            *ptr = value;
 
-        //     break;
-        // }
+            break;
+        }
 
         // S + A
         // word64
@@ -784,7 +784,7 @@ void CTXCreateExecutable(Context *ctx, char *name) {
                 char *data = &sec_ref->elf->raw[shdr->sh_offset];
                 fwrite(data, 1, shdr->sh_size, out);
             }
-            
+
             offset += shdr->sh_size;
         }
     }
