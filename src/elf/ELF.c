@@ -672,6 +672,7 @@ char *ELFRelTypeName(unsigned type) {
         case 2: return "R_X86_64_PC32";
         case 10: return "R_X86_64_32";
         case 1: return "R_X86_64_64";
+        case 11: return "R_X86_64_32S";
     }
     return "{unknown reloc type}";
 }

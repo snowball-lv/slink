@@ -551,6 +551,28 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
             break;
         }
 
+        // The R_X86_64_32 and R_X86_64_32S relocations truncate the computed
+        // value to 32-bits. The linker must verify that the generated value 
+        // for the R_X86_64_32 (R_X86_64_32S) relocation zero-extends 
+        // (sign-extends) to the original 64-bit value.
+
+        // S + A
+        // word32
+        case R_X86_64_32S: {
+
+            assert(sym->st_value <= INT32_MAX);
+            int32_t value = (int32_t) sym->st_value;
+
+            assert(rela->r_addend >= INT32_MIN);
+            assert(rela->r_addend <= INT32_MAX);
+            value += (int32_t) rela->r_addend;
+
+            int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
+            *ptr = value;
+
+            break;
+        }
+
         default:
             fprintf(
                 stderr, 
