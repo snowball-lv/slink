@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <assert.h>
 
 
@@ -604,7 +605,7 @@ void CTXProcessRelocations(Context *ctx) {
     }
 }
 
-static void LayOutELFSymbols(Context *ctx, Elf *elf) {
+static void LayOutELFSymbols(Elf *elf) {
     // skip null symbol
     for (size_t i = 0; i < elf->sym_cnt; i++) {
         
@@ -636,7 +637,7 @@ void CTXLayOutSymbols(Context *ctx) {
     for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
         LoadedFile *lfile = ctx->lfiles[i];
         Elf *elf = lfile->elf;
-        LayOutELFSymbols(ctx, elf);
+        LayOutELFSymbols(elf);
     }
 }
 
@@ -752,7 +753,8 @@ void CTXCreateExecutable(Context *ctx, char *name) {
         SegRef *seg_ref = &ctx->seg_refs[i];
         Elf64_Phdr *phdr = seg_ref->phdr;
 
-        long offset = phdr->p_offset;
+        assert(phdr->p_offset <= LONG_MAX);
+        long offset = (long) phdr->p_offset;
 
         for (size_t k = 0; k < seg_ref->sec_count; k++) {
 
@@ -764,7 +766,7 @@ void CTXCreateExecutable(Context *ctx, char *name) {
             printf("%lu:%lu [%s] [%s]\n", i, k, name, elf->path);
 
             if (shdr->sh_addralign > 1) {
-                offset = Align(offset, shdr->sh_addralign);
+                offset = (long) Align((size_t) offset, shdr->sh_addralign);
             }
 
             fseek(out, offset, SEEK_SET);
@@ -774,7 +776,7 @@ void CTXCreateExecutable(Context *ctx, char *name) {
                 fwrite(data, 1, shdr->sh_size, out);
             }
 
-            offset += shdr->sh_size;
+            offset += (long) shdr->sh_size;
         }
     }
 
