@@ -780,7 +780,7 @@ void CTXCreateExecutable(Context *ctx, char *name) {
         }
     }
 
-    fputc(0, out);
+    // fputc(0, out);
     fclose(out);
 }
 
