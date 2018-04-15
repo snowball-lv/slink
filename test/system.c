@@ -72,11 +72,11 @@ void i2str(int i, char *buffer) {
         ptr++;
     }
 
-    int v = abs(i);
+    int v = iabs(i);
 
     while (1) {
         int r = v % 10;
-        *ptr = '0' + r;
+        *ptr = (char) ('0' + r);
         ptr++;
         v = v / 10;
         if (v == 0) {
