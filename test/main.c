@@ -12,7 +12,7 @@ int main() {
     
     mod_foo();
 
-    // char buffer[64];
+    char buffer[64];
 
     return 0;
 }

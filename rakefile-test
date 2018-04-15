@@ -18,6 +18,7 @@ CFLAGS = [
     "-Wextra",
     "-Wpedantic",
     "-Wconversion",
+    "-fno-stack-protector",
     # "-Werror",
     # "-fPIC"
 ]
