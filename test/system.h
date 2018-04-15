@@ -13,3 +13,5 @@ int print(char *str);
 
 int puts (const char *str);
 int printf (const char *format, ... );
+
+void i2str(int i, char *buffer);
