@@ -12,8 +12,6 @@ int main() {
     
     mod_foo();
 
-    printf("int %i\n", 1337);
-
     char buffer[64];
     
     i2str(-1337, buffer);
@@ -27,6 +25,9 @@ int main() {
     i2str(1337, buffer);
     print(buffer);
     print("\n");
+
+    printf("printf int %i\n", 1337);
+    printfln("printf int %i", -1337);
 
 
     return 0;

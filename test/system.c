@@ -11,7 +11,7 @@ int print(char *str) {
     return write(1, str, strlen(str));
 }
 
-static int putchar (int character) {
+int putchar (int character) {
     char str[] = { (char) character, 0 };
     print(str);
     return character;
@@ -22,7 +22,26 @@ int printf (const char *format, ... ) {
     va_list vl;
     va_start(vl, format);
 
-    print(format);
+    const char *ptr = format;
+    while (*ptr) {
+
+        if (*ptr == '%') {
+            char s = *(ptr + 1);
+            if (s == 'i') {
+
+                int i = va_arg(vl, int);
+                char buffer[64];
+                i2str(i, buffer);
+                print(buffer);
+
+                ptr += 2;
+                continue;
+            }
+        }
+
+        putchar(*ptr);
+        ptr++;
+    }
 
     va_end(vl);
     return 0;
