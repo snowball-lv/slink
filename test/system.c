@@ -1,5 +1,5 @@
 #include "system.h"
-
+#include <stdarg.h>
 
 size_t strlen(char *str) {
     size_t len = 0;

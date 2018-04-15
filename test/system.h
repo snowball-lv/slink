@@ -10,3 +10,6 @@ extern int write(
 
 size_t strlen(char *str);
 int print(char *str);
+
+int puts (const char *str);
+int printf (const char *format, ... );

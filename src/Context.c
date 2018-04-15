@@ -487,7 +487,11 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
 
         Global *undef = FindUndef(ctx, name);
         assert(undef != 0);
-        assert(undef->def != 0);
+
+        if (undef->def == 0) {
+            fprintf(stderr, "Undefined [%s]\n", undef->name);
+            exit(1);
+        }
 
         sym = undef->def;
     }
