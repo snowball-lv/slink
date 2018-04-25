@@ -34,6 +34,25 @@ size_t SymTabSize(SymTab *symtab) {
     return symtab->sym_cnt;
 }
 
+
+void SymTabAssert(SymTab *symtab) {
+    FILE *symtablog = fopen("symtab.log.txt", "a");
+    fprintf(symtablog, "\nChecking for undefs\n");
+    size_t undefs = 0;
+    for (size_t i = 0; i < symtab->sym_cnt; i++) {
+        SymRef *ref = &symtab->syms[i];
+        if (ref->def == 0) {
+            undefs++;
+            fprintf(symtablog, "[%s] undefined\n", ref->name);
+        }
+    }
+    if (undefs > 0) {
+        ERROR("Some symbols still undefined\n");
+    }
+    fclose(symtablog);
+}
+
+
 void SymTabAdd(SymTab *symtab, Elf *elf, Elf64_Sym *sym) {
 
     unsigned char binding = ELF64_ST_BIND(sym->st_info);

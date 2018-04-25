@@ -25,3 +25,4 @@ typedef struct {
 void SymTabAdd(SymTab *symtab, Elf *elf, Elf64_Sym *sym);
 size_t SymTabSize(SymTab *symtab);
 Elf64_Sym *SymTabGetDef(SymTab *symtab, char *name);
+void SymTabAssert(SymTab *symtab);

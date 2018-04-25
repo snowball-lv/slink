@@ -750,6 +750,8 @@ void CTXLinkSymbols(Context *ctx) {
         }
         
     } while (last_size != SymTabSize(&ctx->symtab));
+
+    SymTabAssert(&ctx->symtab);
 }
 
 void CTXPrintUndefs(Context *ctx) {
