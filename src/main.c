@@ -19,6 +19,10 @@ int main(int argc, char **argv) {
 
     printf("--- S LINK ---\n");
 
+    FILE *symtablog = fopen("symtab.log.txt", "w");
+    fprintf(symtablog, "--- SYM TAB LOG ---\n");
+    fclose(symtablog);
+
     // define linking context
     Context ctx = { 0 };
 
@@ -33,26 +37,7 @@ int main(int argc, char **argv) {
     
     CTXLoadInputFiles(&ctx);
 
-    ctx.needs_sym_pass = 1;
-    while (ctx.needs_sym_pass) {
-        
-        ctx.needs_sym_pass = 0;
-
-        printf("\n");
-        printf("----------------------------\n");
-        printf("          NEW PASS\n");
-        printf("----------------------------\n");
-        printf("\n");
-
-        CTXCollectUndefs(&ctx);
-        CTXResolveUndefs(&ctx);
-    }
-
-    printf("\n");
-    printf("----------------------------\n");
-    printf("            DONE\n");
-    printf("----------------------------\n");
-    printf("\n");
+    CTXLinkSymbols(&ctx);
 
     CTXPrintUndefs(&ctx);
 

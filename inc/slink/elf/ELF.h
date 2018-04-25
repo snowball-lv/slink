@@ -144,8 +144,10 @@ extern size_t ELF_SHFS_CNT;
 
 char *ELFSectionTypeName(Elf64_Word sh_type);
 char *ELFSectionFlagName(Elf64_Xword sh_flag);
-char *ELFSpecialSectionName(Elf64_Word index);
+char *ELFSpecialSectionName(size_t index);
 int ELFIsSectionSpecial(Elf64_Half st_shndx);
+
+char *ELFSectionName(Elf *elf, size_t shndx);
 
 char *ELFSymBindingName(unsigned char st_bind);
 char *ELFSymTypeName(unsigned char st_type);
@@ -228,3 +230,15 @@ char *ELFRelTypeName(unsigned type);
 #define PF_X        0x1
 #define PF_W        0x2
 #define PF_R        0x4
+
+#define STT_NOTYPE      0
+#define STT_OBJECT      1
+#define STT_FUNC        2
+#define STT_SECTION     3
+#define STT_FILE        4
+#define STT_COMMON      5
+#define STT_TLS         6
+#define STT_LOOS        10
+#define STT_HIOS        12
+#define STT_LOPROC      13
+#define STT_HIPROC      15

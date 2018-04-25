@@ -1,4 +1,5 @@
 #include <slink/Context.h>
+#include <slink/SymTab.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -98,6 +99,9 @@ static void TestSupport(Elf *elf) {
 }
 
 void CTXLoadInputFiles(Context *ctx) {
+
+    ctx->symtab = (SymTab) { 0 };
+
     for (size_t i = 0; i < ctx->ifiles_cnt; i++) {
 
         char *path = ctx->ifiles[i];
@@ -124,141 +128,6 @@ void CTXLoadInputFiles(Context *ctx) {
         ctx->lfiles_cnt++;
         ctx->lfiles = realloc(ctx->lfiles, ctx->lfiles_cnt * sizeof(LoadedFile *));
         ctx->lfiles[ctx->lfiles_cnt - 1] = lfile;
-    }
-}
-
-static void AddUndef(Context *ctx, Elf *elf, Elf64_Sym *sym) {
-
-    assert(sym->st_shndx != SHN_XINDEX);
-    assert(sym->st_shndx == SHN_UNDEF);
-
-    unsigned char binding = ELF64_ST_BIND(sym->st_info);
-
-    // handle only globals
-    assert(binding == STB_GLOBAL);
-    
-    char *name = &elf->sym_str_tab[sym->st_name];
-
-    for (size_t i = 0; i < ctx->undefs_cnt; i++) {
-        Global *undef = ctx->undefs[i];
-        if (strcmp(undef->name, name) == 0) {
-            // already added to undefs
-            return;
-        }
-    }
-
-    Global *undef = calloc(1, sizeof(Global));
-
-    undef->name = name;
-    undef->defined = 0;
-    undef->binding = binding;
-    undef->def_by = 0;
-    undef->def = 0;
-
-    ctx->undefs_cnt++;
-    ctx->undefs = realloc(ctx->undefs, ctx->undefs_cnt * sizeof(Global *));
-    ctx->undefs[ctx->undefs_cnt - 1] = undef;
-
-    printf("Requested [%s]\n", name);
-}
-
-void CTXCollectUndefs(Context *ctx) {
-    for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
-
-        LoadedFile *lfile = ctx->lfiles[i];
-        Elf *elf = lfile->elf;
-
-        // skip null symbol
-        for (size_t i = 1; i < elf->sym_cnt; i++) {
-            Elf64_Sym *sym = &elf->sym_tab[i];
-            if (sym->st_shndx == SHN_UNDEF) {
-                AddUndef(ctx, elf, sym);
-            }
-        }
-    }
-}
-
-static Global *FindUndef(Context *ctx, char *name) {
-    for (size_t i = 0; i < ctx->undefs_cnt; i++) {
-        Global *undef = ctx->undefs[i];
-        if (strcmp(undef->name, name) == 0) {
-            return undef;
-        }
-    }
-    return 0;
-}
-
-static void DefineUndef(Context *ctx, Elf *elf, Elf64_Sym *sym) {
-
-    assert(sym->st_shndx != SHN_UNDEF);
-
-    unsigned char binding = ELF64_ST_BIND(sym->st_info);
-
-    // handle only globals
-    assert(binding == STB_GLOBAL);
-    
-    char *name = &elf->sym_str_tab[sym->st_name];
-
-    Global *undef = FindUndef(ctx, name);
-    if (undef == 0) {
-        return;
-    }
-
-    if (undef->defined) {
-
-        // already defined by current sym
-        if (undef->def == sym) {
-            return;
-        }
-
-        fprintf(stderr, "Multiple definitions of [%s]\n", name);
-        fprintf(stderr, "By [%s] and [%s]\n", elf->path, undef->def_by->path);
-        exit(1);
-
-    } else {
-
-        printf("Defined [%s]\n", name);
-
-        undef->def_by = elf;
-        undef->def = sym;
-        undef->defined = 1;
-
-        ctx->needs_sym_pass = 1;
-        return;
-    }
-}
-
-void CTXResolveUndefs(Context *ctx) {
-    for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
-
-        LoadedFile *lfile = ctx->lfiles[i];
-        Elf *elf = lfile->elf;    
-
-        // skip null symbol
-        for (size_t i = 1; i < elf->sym_cnt; i++) {
-            Elf64_Sym *sym = &elf->sym_tab[i];
-            unsigned char binding = ELF64_ST_BIND(sym->st_info);
-            if (sym->st_shndx != SHN_UNDEF && binding == STB_GLOBAL) {
-                DefineUndef(ctx, elf, sym);
-            }
-        }
-    }
-}
-
-void CTXPrintUndefs(Context *ctx) {
-    for (size_t i = 0; i < ctx->undefs_cnt; i++) {
-        Global *undef = ctx->undefs[i];
-        if (!undef->defined) {
-
-            if (undef->binding == STB_WEAK) {
-                continue;
-            }
-
-            printf(
-                "Still undefined [%s] [%s]\n",
-                undef->name,
-                ELFSymBindingName(undef->binding));
-        }
     }
 }
 
@@ -423,35 +292,6 @@ size_t CTXCountModules(Context *ctx) {
     return count;
 }
 
-Global **CTXGetUndefs(Context *ctx) {
-
-    size_t count = 0;
-    Global **undefs = 0;
-
-    for (size_t i = 0; i < ctx->undefs_cnt; i++) {
-        Global *undef = ctx->undefs[i];
-        if (!undef->defined) {
-
-            // skip WEAK symbols
-            if (undef->binding == STB_WEAK) {
-                continue;
-            }
-
-            count++;
-            undefs = realloc(undefs, count * sizeof(Global *));
-            undefs[count - 1] = undef;
-        }
-    }
-
-    // add terminating zero
-    count++;
-    undefs = realloc(undefs, count * sizeof(Global *));
-    undefs[count - 1] = 0;
-
-    return undefs;
-}
-
-
 static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Rela *rela) {
 
     Elf64_Shdr *sym_tab_sh = &elf->shdrs[shdr->sh_link];
@@ -484,16 +324,7 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
     char *name = &sym_str_tab[sym->st_name];
 
     if (sym->st_shndx == SHN_UNDEF) {
-
-        Global *undef = FindUndef(ctx, name);
-        assert(undef != 0);
-
-        if (undef->def == 0) {
-            fprintf(stderr, "Undefined [%s]\n", undef->name);
-            exit(1);
-        }
-
-        sym = undef->def;
+        sym = SymTabGetDef(&ctx->symtab, name);
     }
 
     Elf64_Shdr *target_sh = &elf->shdrs[shdr->sh_info];
@@ -893,4 +724,34 @@ void CTXGroupIntoSegments(Context *ctx) {
     }
 
     printf("Segments %lu\n", ctx->seg_count);
+}
+
+void CTXLinkSymbols(Context *ctx) {
+
+    size_t last_size = 0;
+    do {
+
+        FILE *symtablog = fopen("symtab.log.txt", "a");
+        fprintf(symtablog, "\nNew Pass\n");
+        fclose(symtablog);
+
+        last_size = SymTabSize(&ctx->symtab);
+
+        for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
+
+            LoadedFile *lfile = ctx->lfiles[i];
+            Elf *elf = lfile->elf;
+
+            // skip null symbol
+            for (size_t i = 1; i < elf->sym_cnt; i++) {
+                Elf64_Sym *sym = &elf->sym_tab[i];
+                SymTabAdd(&ctx->symtab, elf, sym);
+            }
+        }
+        
+    } while (last_size != SymTabSize(&ctx->symtab));
+}
+
+void CTXPrintUndefs(Context *ctx) {
+
 }

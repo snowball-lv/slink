@@ -2,6 +2,7 @@
 
 #include <slink/elf/ELF.h>
 #include <slink/elf/Archive.h>
+#include <slink/SymTab.h>
 
 
 #define PAGE_SIZE   4096
@@ -10,14 +11,6 @@ typedef struct {
     char *path;
     Elf *elf;
 } LoadedFile;
-
-typedef struct {
-    char *name;
-    int defined;
-    unsigned char binding;
-    Elf *def_by;
-    Elf64_Sym *def;
-} Global;
 
 typedef struct {
     Elf *elf;
@@ -38,23 +31,17 @@ typedef struct {
     LoadedFile **lfiles;
     size_t lfiles_cnt;
 
-    Global **undefs;
-    size_t undefs_cnt;
-
     SecRef *sec_refs;
     size_t sec_count;
-
-    int needs_sym_pass;
 
     SegRef *seg_refs;
     size_t seg_count;
 
+    SymTab symtab;
+
 } Context;
 
 void CTXLoadInputFiles(Context *ctx);
-
-void CTXCollectUndefs(Context *ctx);
-void CTXResolveUndefs(Context *ctx);
 
 void CTXPrintUndefs(Context *ctx);
 
@@ -62,8 +49,6 @@ void CTXCollectSections(Context *ctx);
 void CTXPrintSections(Context *ctx);
 
 size_t CTXCountModules(Context *ctx);
-
-Global **CTXGetUndefs(Context *ctx);
 
 void CTXProcessRelocations(Context *ctx);
 
@@ -73,3 +58,5 @@ void CTXPrintSymbols(Context *ctx);
 void CTXCreateExecutable(Context *ctx, char *name);
 
 void CTXGroupIntoSegments(Context *ctx);
+
+void CTXLinkSymbols(Context *ctx);

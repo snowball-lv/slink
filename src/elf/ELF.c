@@ -324,7 +324,7 @@ char *ELFSymVisibilityName(unsigned char st_other) {
     return "{invalid sym visibility}";
 }
 
-char *ELFSpecialSectionName(Elf64_Word index) {
+char *ELFSpecialSectionName(size_t index) {
     switch (index) {
         case 0:         return "SHN_UNDEF";
         case 0xfff1:    return "SHN_ABS";
@@ -675,4 +675,13 @@ char *ELFRelTypeName(unsigned type) {
         case 11: return "R_X86_64_32S";
     }
     return "{unknown reloc type}";
+}
+
+char *ELFSectionName(Elf *elf, size_t shndx) {
+    char *sec_name = ELFSpecialSectionName(shndx);
+    if (sec_name == 0) {
+        Elf64_Shdr *shdr = &elf->shdrs[shndx];
+        sec_name = &elf->sec_name_str_tab[shdr->sh_name];
+    }
+    return sec_name;
 }
