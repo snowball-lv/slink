@@ -43,8 +43,6 @@ typedef struct {
 
 void CTXLoadInputFiles(Context *ctx);
 
-void CTXPrintUndefs(Context *ctx);
-
 void CTXCollectSections(Context *ctx);
 void CTXPrintSections(Context *ctx);
 

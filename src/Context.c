@@ -1,5 +1,7 @@
 #include <slink/Context.h>
 #include <slink/SymTab.h>
+#include <slink/Log.h>
+#include <slink/Error.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,7 +31,7 @@ static void TestSupport(Elf *elf) {
             default:
                 fprintf(stderr, "For symbol [%s]\n", name);
                 fprintf(stderr, "No support for binding [%s]\n", ELFSymBindingName(binding));
-                exit(1);
+                ERROR("Unsupported functionality");
         }
 
         // test special section support
@@ -43,7 +45,7 @@ static void TestSupport(Elf *elf) {
                 default:
                     fprintf(stderr, "For symbol [%s]\n", name);
                     fprintf(stderr, "No support for section [%s]\n", ELFSpecialSectionName(sym->st_shndx));
-                    exit(1);
+                    ERROR("Unsupported functionality");
             }
         }
     }
@@ -71,7 +73,7 @@ static void TestSupport(Elf *elf) {
             default:
                 fprintf(stderr, "For section [%s]\n", name);
                 fprintf(stderr, "No support for type [%s]\n", ELFSectionTypeName(shdr->sh_type));
-                exit(1);
+                ERROR("Unsupported functionality");
         }
 
         // test section attribute support
@@ -91,7 +93,7 @@ static void TestSupport(Elf *elf) {
                     default:
                         fprintf(stderr, "For section [%s]\n", name);
                         fprintf(stderr, "No support for flag [%s]\n", ELFSectionFlagName(flag));
-                        exit(1);
+                        ERROR("Unsupported functionality");
                 }
             }
         }
@@ -105,7 +107,7 @@ void CTXLoadInputFiles(Context *ctx) {
     for (size_t i = 0; i < ctx->ifiles_cnt; i++) {
 
         char *path = ctx->ifiles[i];
-        printf("Loading [%s]\n", path);
+        Log("general", "Loading [%s]\n", path);
 
         LoadedFile *lfile = calloc(1, sizeof(LoadedFile));
 
@@ -274,7 +276,7 @@ void CTXPrintSections(Context *ctx) {
     for (size_t i = 0; i < ctx->sec_count; i++) {
         SecRef *sr = &ctx->sec_refs[i];
         char *sec_name = &sr->elf->sec_name_str_tab[sr->shdr->sh_name];
-        printf("0x%.8lx [%s] [%s]\n", sr->shdr->sh_addr, sec_name, sr->elf->path);
+        Log("sections", "0x%.8lx [%s] [%s]\n", sr->shdr->sh_addr, sec_name, sr->elf->path);
     }
 }
 
@@ -306,7 +308,7 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
 
     unsigned type = ELF64_R_TYPE(rela->r_info);
 
-    printf("Processing reloc %u [%s]\n", type, ELFRelTypeName(type));
+    Log("relproc", "Processing reloc %u [%s]\n", type, ELFRelTypeName(type));
 
     /*
         S - Represents the value of the symbol whose index resides in 
@@ -409,11 +411,9 @@ static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Re
         }
 
         default:
-            fprintf(
-                stderr, 
+            ERROR(
                 "Can't handle relocs of type %u [%s]\n",
                 type, ELFRelTypeName(type));
-            exit(1);
     }
 }
 
@@ -422,7 +422,7 @@ static void ProcessRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr) {
     assert(shdr->sh_type == SHT_RELA);
 
     char *name = &elf->sec_name_str_tab[shdr->sh_name];
-    printf("Processing relocs in [%s] [%s]\n", name, elf->path);
+    Log("relproc", "Processing relocs in [%s] [%s]\n", name, elf->path);
 
     assert(shdr->sh_entsize == sizeof(Elf64_Rela));
 
@@ -434,8 +434,7 @@ static void ProcessRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr) {
         Elf64_Rela *rela = (Elf64_Rela *) &elf->raw[shdr->sh_offset + off];
 
         if (!first_rel && rela->r_offset == last_rel_offset) {
-            fprintf(stderr, "Consecutive reloation are not supported\n");
-            exit(1);
+            ERROR("Consecutive reloation are not supported\n");
         }
         first_rel = 0;
         last_rel_offset = rela->r_offset;
@@ -600,7 +599,7 @@ void CTXCreateExecutable(Context *ctx, char *name) {
         data_off += phdr->p_filesz;
         data_off = Align4k(data_off);
 
-        printf("%lu + %lu (%lu)\n", phdr->p_offset, phdr->p_filesz, phdr->p_memsz);
+        Log("general", "%lu + %lu (%lu)\n", phdr->p_offset, phdr->p_filesz, phdr->p_memsz);
 
         fwrite(phdr, sizeof(Elf64_Phdr), 1, out);
     }
@@ -620,7 +619,7 @@ void CTXCreateExecutable(Context *ctx, char *name) {
             Elf64_Shdr *shdr = sec_ref->shdr;
             char *name = &elf->sec_name_str_tab[shdr->sh_name];
 
-            printf("%lu:%lu [%s] [%s]\n", i, k, name, elf->path);
+            Log("seg", "%lu:%lu [%s] [%s]\n", i, k, name, elf->path);
 
             if (shdr->sh_addralign > 1) {
                 offset = (long) Align((size_t) offset, shdr->sh_addralign);
@@ -657,11 +656,9 @@ void CTXGroupIntoSegments(Context *ctx) {
                 break;
 
             default:
-                fprintf(
-                    stderr,
+                ERROR(
                     "Can't output section [%s] to executable\n",
                     ELFSectionTypeName(shdr->sh_type));
-                exit(1);
         }
 
         if (last_flags != shdr->sh_flags) {
@@ -723,7 +720,7 @@ void CTXGroupIntoSegments(Context *ctx) {
         seg_ref->sec_refs[seg_ref->sec_count - 1] = *ref;
     }
 
-    printf("Segments %lu\n", ctx->seg_count);
+    Log("general", "Segments %lu\n", ctx->seg_count);
 }
 
 void CTXLinkSymbols(Context *ctx) {
@@ -752,8 +749,4 @@ void CTXLinkSymbols(Context *ctx) {
     } while (last_size != SymTabSize(&ctx->symtab));
 
     SymTabAssert(&ctx->symtab);
-}
-
-void CTXPrintUndefs(Context *ctx) {
-
 }

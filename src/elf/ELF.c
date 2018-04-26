@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <slink/Log.h>
 
 
 char *ELFFileClassName(uint8_t FileClass) {
@@ -554,7 +555,7 @@ void ELFPrintSymTab(FILE *file, Elf *elf) {
     
     char *path = elf->path;
 
-    fprintf(file, "\n");
+    Log("sym", "\n");
     // skip null symbol
     for (size_t i = 1; i < elf->sym_cnt; i++) {
 
@@ -566,8 +567,8 @@ void ELFPrintSymTab(FILE *file, Elf *elf) {
             sec_name = &elf->sec_name_str_tab[shdr->sh_name];
         }
 
-        fprintf(
-            file,
+        Log(
+            "sym",
             "[%s] [%s] [%s] 0x%lx\n",
             path,
             &elf->sym_str_tab[sym->st_name],
@@ -640,8 +641,8 @@ void ELFPrintRelocs(FILE *file, Elf *elf, Elf64_Shdr *shdr) {
         Elf64_Sym *sym = &elf->sym_tab[ELF64_R_SYM(reloc->r_info)];
         char *sym_name = &elf->sym_str_tab[sym->st_name];
 
-        fprintf(
-            file, 
+        Log(
+            "rel", 
             "[%s] [%s] %li %lu [%s] %lu [%s]\n", 
             path,
             &elf->sec_name_str_tab[shdr->sh_name],

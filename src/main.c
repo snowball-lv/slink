@@ -7,6 +7,7 @@
 #include <slink/Context.h>
 #include <slink/elf/ELF.h>
 #include <slink/elf/Archive.h>
+#include <slink/Log.h>
 
 
 // 1. Link undefined symbols to their definitions
@@ -17,11 +18,8 @@
 
 int main(int argc, char **argv) {
 
-    printf("--- S LINK ---\n");
-
-    FILE *symtablog = fopen("symtab.log.txt", "w");
-    fprintf(symtablog, "--- SYM TAB LOG ---\n");
-    fclose(symtablog);
+    LogClear();
+    Log("general", "--- S LINK ---\n");
 
     // define linking context
     Context ctx = { 0 };
@@ -32,24 +30,21 @@ int main(int argc, char **argv) {
 
     // print input files
     for (size_t i = 0; i < ctx.ifiles_cnt; i++) {
-        printf("Input File [%s]\n", ctx.ifiles[i]);
+        Log("input", "%s\n", ctx.ifiles[i]);
     }
     
     CTXLoadInputFiles(&ctx);
 
     CTXLinkSymbols(&ctx);
 
-    CTXPrintUndefs(&ctx);
-
     CTXCollectSections(&ctx);
     CTXPrintSections(&ctx);
 
-    printf("%lu modules loaded\n", CTXCountModules(&ctx));
+    Log("general", "%lu modules loaded\n", CTXCountModules(&ctx));
 
     CTXPrintSymbols(&ctx);
 
-    printf("\n");
-    printf("Laying out symbols\n");
+    Log("general", "Laying out symbols\n");
 
     CTXLayOutSymbols(&ctx);
     CTXPrintSymbols(&ctx);
