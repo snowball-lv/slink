@@ -21,6 +21,7 @@
 
 
 static int sec_order_compar(const void *p1, const void *p2);
+static void AssignSectionAddresses(Section **secs, size_t base);
 
 int main(int argc, char **argv) {
 
@@ -121,13 +122,98 @@ int main(int argc, char **argv) {
     // subtract 1 from size to account for 0 terminator
     qsort(secs, ZTAS(secs) - 1, sizeof(Section *), sec_order_compar);
 
-    // log section order
+    // assign section addresses
+    AssignSectionAddresses(secs, 0x400000);
+
+    // log section order and new addresses
     for (size_t i = 0; i < ZTArraySize((void **) secs); i++) {
         Section *sec = secs[i];
-        Log("sec-order", "[%s] [%s]\n", sec->name, sec->src);
+        Log("sec-order", "[%s] 0x%lx [%s]\n", sec->name, sec->addr, sec->src);
+    }
+
+    // lay out symbols
+    for (size_t i = 0; i < ZTAS(secs); i++) {
+        Section *sec = secs[i];
+        if (sec->type == SHT_SYMTAB) {
+            size_t sym_cnt = ZTArraySize((void **) sec->symtab);
+            for (size_t k = 0; k < sym_cnt; k++) {
+
+                Symbol *sym = sec->symtab[k];
+
+                if (sym->is_shndx_special) {
+
+                    switch (sym->shndx) {
+                        case SHN_ABS:
+                        case SHN_UNDEF:
+                            continue;
+                        default:
+                            ERROR(
+                                "Can't handle shndx: [%s]\n",
+                                ELFSpecialSectionName(sym->shndx));
+                    }
+
+                } else {
+
+                    Section *sec = sym->sec;
+                    sym->value += sec->addr;
+                    
+                }
+
+                Log(
+                    "sym-addr", 
+                    "[%s] 0x%lx [%s]\n", 
+                    sym->name, sym->value, sym->sec->name);
+            }
+        }
     }
 
     return 0;
+}
+
+static size_t Align(size_t addr, size_t alignment) {
+    assert(alignment > 1);
+    addr += alignment - 1;
+    addr = (addr / alignment) * alignment;
+    return addr;
+}
+
+static size_t Align4k(size_t addr) {
+    return Align(addr, PAGE_SIZE);
+}
+
+static void AssignSectionAddresses(Section **secs, size_t base) {
+
+    size_t sec_cnt = ZTAS(secs);
+    size_t addr = base;
+
+    uint64_t last_flags = 0;
+
+    for (size_t i = 0 ; i < sec_cnt; i++) {
+
+        Section *sec = secs[i];
+
+        // start of new segment
+        if (sec->flags != last_flags) {
+            addr = Align4k(addr);
+            last_flags = sec->flags;
+        }
+
+        if (sec->addr != 0) {
+            fprintf(stderr, "[%s] [%s]\n", sec->name, sec->src);
+            ERROR("Can't handle non 0 base sections.\n");
+        }
+
+        if (sec->addralign > 1) {
+            addr = Align(addr, sec->addralign);
+        }
+
+        if (sec->addralign != 0) {
+            assert((addr % sec->addralign) == 0);
+        }
+
+        sec->addr = addr;
+        addr += sec->size;
+    }
 }
 
 static int sec_order_compar(const void *p1, const void *p2) {
