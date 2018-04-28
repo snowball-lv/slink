@@ -13,4 +13,6 @@ task :clean do
     FileUtils.rm_rf("out")
     FileUtils.rm_rf("bin")
     FileUtils.rm_rf("deps")
+    FileUtils.rm_rf("hello_world")
+    FileUtils.rm_rf(FileList["*.txt"])
 end

@@ -14,10 +14,12 @@ typedef int64_t Elf64_Sxword;
 
 #define EI_NIDENT   16
 
-#define SHN_UNDEF   0
-#define SHN_XINDEX  0xffff
-#define SHN_ABS     0xfff1
-#define SHN_COMMON  0xfff2
+#define SHN_UNDEF       0
+#define SHN_XINDEX      0xffff
+#define SHN_ABS         0xfff1
+#define SHN_COMMON      0xfff2
+#define SHN_LORESERVE   0xff00
+#define SHN_HIRESERVE   0xffff
 
 #define SHT_NOBITS  8
 #define SHT_SYMTAB  2

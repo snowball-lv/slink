@@ -1,12 +1,14 @@
 #include <slink/Context.h>
-#include <slink/SymTab.h>
-#include <slink/Log.h>
-#include <slink/Error.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
+#include <slink/SymTab.h>
+#include <slink/Log.h>
+#include <slink/Error.h>
+#include <slink/SLink.h>
+#include <slink/Common.h>
 
 
 static void TestSupport(Elf *elf) {
@@ -120,6 +122,13 @@ void CTXLoadInputFiles(Context *ctx) {
             ELFRead(path, elf);
             TestSupport(elf);
             lfile->elf = elf;
+
+            Section **secs = ExtractSections(elf);
+            printf(
+                "[%s] secs - %lu (%lu)\n",
+                elf->path,
+                ZTArraySize((void **)secs),
+                elf->shnum);
 
         } else {
             fprintf(stderr, "Unknown file type\n");
@@ -294,128 +303,128 @@ size_t CTXCountModules(Context *ctx) {
     return count;
 }
 
-static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Rela *rela) {
+// static void ProcessSingleRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr, Elf64_Rela *rela) {
 
-    Elf64_Shdr *sym_tab_sh = &elf->shdrs[shdr->sh_link];
-    assert(sym_tab_sh->sh_type == SHT_SYMTAB);
+    // Elf64_Shdr *sym_tab_sh = &elf->shdrs[shdr->sh_link];
+    // assert(sym_tab_sh->sh_type == SHT_SYMTAB);
 
-    Elf64_Sym *sym_tab = (Elf64_Sym *) &elf->raw[sym_tab_sh->sh_offset];
+    // Elf64_Sym *sym_tab = (Elf64_Sym *) &elf->raw[sym_tab_sh->sh_offset];
 
-    Elf64_Shdr *sym_str_tab_sh = &elf->shdrs[sym_tab_sh->sh_link];
-    assert(sym_str_tab_sh->sh_type == SHT_STRTAB);
+    // Elf64_Shdr *sym_str_tab_sh = &elf->shdrs[sym_tab_sh->sh_link];
+    // assert(sym_str_tab_sh->sh_type == SHT_STRTAB);
 
-    char *sym_str_tab = &elf->raw[sym_str_tab_sh->sh_offset];
+    // char *sym_str_tab = &elf->raw[sym_str_tab_sh->sh_offset];
 
-    unsigned type = ELF64_R_TYPE(rela->r_info);
+    // unsigned type = ELF64_R_TYPE(rela->r_info);
 
-    Log("relproc", "Processing reloc %u [%s]\n", type, ELFRelTypeName(type));
+    // Log("relproc", "Processing reloc %u [%s]\n", type, ELFRelTypeName(type));
 
-    /*
-        S - Represents the value of the symbol whose index resides in 
-        the relocation entry.
+    // /*
+    //     S - Represents the value of the symbol whose index resides in 
+    //     the relocation entry.
 
-        A - Represents the addend used to compute the value of the
-        relocatable field.
+    //     A - Represents the addend used to compute the value of the
+    //     relocatable field.
 
-        P - Represents the place (section offset or address) of the 
-        storage unit being relocated (computed using r_offset).
-    */
+    //     P - Represents the place (section offset or address) of the 
+    //     storage unit being relocated (computed using r_offset).
+    // */
 
-    size_t sym_index = ELF64_R_SYM(rela->r_info);
-    Elf64_Sym *sym = &sym_tab[sym_index];
-    char *name = &sym_str_tab[sym->st_name];
+    // size_t sym_index = ELF64_R_SYM(rela->r_info);
+    // Elf64_Sym *sym = &sym_tab[sym_index];
+    // char *name = &sym_str_tab[sym->st_name];
 
-    if (sym->st_shndx == SHN_UNDEF) {
-        sym = SymTabGetDef(&ctx->symtab, name);
-    }
+    // if (sym->st_shndx == SHN_UNDEF) {
+    //     sym = SymTabGetDef(&ctx->symtab, name);
+    // }
 
-    Elf64_Shdr *target_sh = &elf->shdrs[shdr->sh_info];
-    char *target_data = &elf->raw[target_sh->sh_offset];
+    // Elf64_Shdr *target_sh = &elf->shdrs[shdr->sh_info];
+    // char *target_data = &elf->raw[target_sh->sh_offset];
 
-    switch (type) {
+    // switch (type) {
 
-        // S + A - P
-        // word32
-        case R_X86_64_PC32: {
+    //     // S + A - P
+    //     // word32
+    //     case R_X86_64_PC32: {
             
-            assert(sym->st_value <= INT32_MAX);
-            int32_t value = (int32_t) sym->st_value;
+    //         assert(sym->st_value <= INT32_MAX);
+    //         int32_t value = (int32_t) sym->st_value;
 
-            assert(rela->r_addend >= INT32_MIN);
-            assert(rela->r_addend <= INT32_MAX);
-            value += (int32_t) rela->r_addend;
+    //         assert(rela->r_addend >= INT32_MIN);
+    //         assert(rela->r_addend <= INT32_MAX);
+    //         value += (int32_t) rela->r_addend;
 
-            assert(rela->r_offset <= INT32_MAX);
-            value -= (int32_t) (target_sh->sh_addr + rela->r_offset);
+    //         assert(rela->r_offset <= INT32_MAX);
+    //         value -= (int32_t) (target_sh->sh_addr + rela->r_offset);
 
-            int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
-            *ptr = value;
+    //         int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
+    //         *ptr = value;
 
-            break;
-        }
+    //         break;
+    //     }
 
-        // S + A
-        // word32
-        case R_X86_64_32: {
+    //     // S + A
+    //     // word32
+    //     case R_X86_64_32: {
 
-            assert(sym->st_value <= INT32_MAX);
-            int32_t value = (int32_t) sym->st_value;
+    //         assert(sym->st_value <= INT32_MAX);
+    //         int32_t value = (int32_t) sym->st_value;
 
-            assert(rela->r_addend >= INT32_MIN);
-            assert(rela->r_addend <= INT32_MAX);
-            value += (int32_t) rela->r_addend;
+    //         assert(rela->r_addend >= INT32_MIN);
+    //         assert(rela->r_addend <= INT32_MAX);
+    //         value += (int32_t) rela->r_addend;
 
-            int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
-            *ptr = value;
+    //         int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
+    //         *ptr = value;
 
-            break;
-        }
+    //         break;
+    //     }
 
-        // S + A
-        // word64
-        case R_X86_64_64: {
+    //     // S + A
+    //     // word64
+    //     case R_X86_64_64: {
             
-            assert(sym->st_value <= INT64_MAX);
-            int64_t value = (int64_t) sym->st_value;
+    //         assert(sym->st_value <= INT64_MAX);
+    //         int64_t value = (int64_t) sym->st_value;
 
-            assert(rela->r_addend >= INT64_MIN);
-            assert(rela->r_addend <= INT64_MAX);
-            value += (int64_t) rela->r_addend;
+    //         assert(rela->r_addend >= INT64_MIN);
+    //         assert(rela->r_addend <= INT64_MAX);
+    //         value += (int64_t) rela->r_addend;
 
-            int64_t *ptr = (int64_t *) &target_data[rela->r_offset];
-            *ptr = value;
+    //         int64_t *ptr = (int64_t *) &target_data[rela->r_offset];
+    //         *ptr = value;
 
-            break;
-        }
+    //         break;
+    //     }
 
-        // The R_X86_64_32 and R_X86_64_32S relocations truncate the computed
-        // value to 32-bits. The linker must verify that the generated value 
-        // for the R_X86_64_32 (R_X86_64_32S) relocation zero-extends 
-        // (sign-extends) to the original 64-bit value.
+    //     // The R_X86_64_32 and R_X86_64_32S relocations truncate the computed
+    //     // value to 32-bits. The linker must verify that the generated value 
+    //     // for the R_X86_64_32 (R_X86_64_32S) relocation zero-extends 
+    //     // (sign-extends) to the original 64-bit value.
 
-        // S + A
-        // word32
-        case R_X86_64_32S: {
+    //     // S + A
+    //     // word32
+    //     case R_X86_64_32S: {
 
-            assert(sym->st_value <= INT32_MAX);
-            int32_t value = (int32_t) sym->st_value;
+    //         assert(sym->st_value <= INT32_MAX);
+    //         int32_t value = (int32_t) sym->st_value;
 
-            assert(rela->r_addend >= INT32_MIN);
-            assert(rela->r_addend <= INT32_MAX);
-            value += (int32_t) rela->r_addend;
+    //         assert(rela->r_addend >= INT32_MIN);
+    //         assert(rela->r_addend <= INT32_MAX);
+    //         value += (int32_t) rela->r_addend;
 
-            int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
-            *ptr = value;
+    //         int32_t *ptr = (int32_t *) &target_data[rela->r_offset];
+    //         *ptr = value;
 
-            break;
-        }
+    //         break;
+    //     }
 
-        default:
-            ERROR(
-                "Can't handle relocs of type %u [%s]\n",
-                type, ELFRelTypeName(type));
-    }
-}
+    //     default:
+    //         ERROR(
+    //             "Can't handle relocs of type %u [%s]\n",
+    //             type, ELFRelTypeName(type));
+    // }
+// }
 
 static void ProcessRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr) {
 
@@ -439,7 +448,7 @@ static void ProcessRelA(Context *ctx, Elf *elf, Elf64_Shdr *shdr) {
         first_rel = 0;
         last_rel_offset = rela->r_offset;
 
-        ProcessSingleRelA(ctx, elf, shdr, rela);
+        // ProcessSingleRelA(ctx, elf, shdr, rela);
     }
 }
 
@@ -725,28 +734,28 @@ void CTXGroupIntoSegments(Context *ctx) {
 
 void CTXLinkSymbols(Context *ctx) {
 
-    size_t last_size = 0;
-    do {
+    // size_t last_size = 0;
+    // do {
 
-        FILE *symtablog = fopen("symtab.log.txt", "a");
-        fprintf(symtablog, "\nNew Pass\n");
-        fclose(symtablog);
+    //     FILE *symtablog = fopen("symtab.log.txt", "a");
+    //     fprintf(symtablog, "\nNew Pass\n");
+    //     fclose(symtablog);
 
-        last_size = SymTabSize(&ctx->symtab);
+    //     last_size = SymTabSize(&ctx->symtab);
 
-        for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
+    //     for (size_t i = 0; i < ctx->lfiles_cnt; i++) {
 
-            LoadedFile *lfile = ctx->lfiles[i];
-            Elf *elf = lfile->elf;
+    //         LoadedFile *lfile = ctx->lfiles[i];
+    //         Elf *elf = lfile->elf;
 
-            // skip null symbol
-            for (size_t i = 1; i < elf->sym_cnt; i++) {
-                Elf64_Sym *sym = &elf->sym_tab[i];
-                SymTabAdd(&ctx->symtab, elf, sym);
-            }
-        }
+    //         // skip null symbol
+    //         for (size_t i = 1; i < elf->sym_cnt; i++) {
+    //             Elf64_Sym *sym = &elf->sym_tab[i];
+    //             // SymTabAdd(&ctx->symtab, elf, sym);
+    //         }
+    //     }
         
-    } while (last_size != SymTabSize(&ctx->symtab));
+    // } while (last_size != SymTabSize(&ctx->symtab));
 
-    SymTabAssert(&ctx->symtab);
+    // SymTabAssert(&ctx->symtab);
 }

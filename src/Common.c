@@ -8,3 +8,16 @@ char *StringCopy(char *str) {
     strcpy(cpy, str);
     return cpy;
 }
+
+size_t ZTArraySize(void **arr) {
+    
+    if (arr == 0) {
+        return 0;
+    }
+
+    size_t size = 0;
+    while (arr[size]) {
+        size++;
+    }
+    return size;
+}
