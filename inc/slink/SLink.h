@@ -49,4 +49,8 @@ struct Section {
     Section *target;
 };
 
+typedef struct {
+    Section **secs;
+} Segment;
+
 Section **ExtractSections(Elf *elf);

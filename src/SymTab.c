@@ -8,7 +8,7 @@
 #include <slink/Log.h>
 
 
-static int UndefIndex(SymTab *symtab, char *name) {
+static int SymIndex(SymTab *symtab, char *name) {
     assert(symtab->sym_cnt <= INT_MAX);
     for (int i = 0; i < (int) symtab->sym_cnt; i++) {
         Symbol *sym = symtab->syms[i];
@@ -20,7 +20,7 @@ static int UndefIndex(SymTab *symtab, char *name) {
 }
 
 Symbol *SymTabGetDef(SymTab *symtab, char *name) {
-    int index = UndefIndex(symtab, name);
+    int index = SymIndex(symtab, name);
     if (index != -1) {
         return symtab->defs[index];
     }
@@ -63,13 +63,12 @@ void SymTabAdd(SymTab *symtab, Symbol *sym) {
 
     if (sym->is_shndx_special) {
         switch (sym->shndx) {
-            case SHN_XINDEX:
-            case SHN_COMMON:
+            case SHN_UNDEF:
+                break;
+            default:
                 ERROR(
                     "Unsupported sym section [%s]\n",
                     ELFSpecialSectionName(sym->shndx));
-            default:
-                break;
         }
     }
 
@@ -84,7 +83,7 @@ void SymTabAdd(SymTab *symtab, Symbol *sym) {
                 ELFSymTypeName(sym->type));
     }
 
-    int index = UndefIndex(symtab, sym->name);
+    int index = SymIndex(symtab, sym->name);
     if (index != -1) {
 
         // reconcile symbols
@@ -119,8 +118,6 @@ void SymTabAdd(SymTab *symtab, Symbol *sym) {
             return;
         }
 
-        assert(!sym->is_shndx_special);
-
         if (symtab->defs[index] == 0) {
 
             Log("symtab", "Satisfied [%s]\n", sym->name);
@@ -139,12 +136,7 @@ void SymTabAdd(SymTab *symtab, Symbol *sym) {
 
         // create new entry
 
-        if (sym->shndx != SHN_UNDEF) {
-            // not undefined, ignore
-            return;
-        }
-
-        Log("symtab", "Requesting [%s]\n", sym->name);
+        assert(sym->binding == STB_GLOBAL);
         
         symtab->sym_cnt++;
         
@@ -157,6 +149,13 @@ void SymTabAdd(SymTab *symtab, Symbol *sym) {
             symtab->sym_cnt * (sizeof(Symbol *)));
 
         symtab->syms[symtab->sym_cnt - 1] = sym;
-        symtab->defs[symtab->sym_cnt - 1] = 0;
+
+        if (sym->shndx != SHN_UNDEF) {
+            Log("symtab", "Defined [%s]\n", sym->name);
+            symtab->defs[symtab->sym_cnt - 1] = sym;
+        } else {
+            Log("symtab", "Requesting [%s]\n", sym->name);
+            symtab->defs[symtab->sym_cnt - 1] = 0;
+        }
     }
 }

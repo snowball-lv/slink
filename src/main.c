@@ -21,8 +21,11 @@
 // 5. Output executable elf
 
 
+#define PAGE_SIZE   4096
+
 static int sec_order_compar(const void *p1, const void *p2);
 static void AssignSectionAddresses(Section **secs, size_t base);
+static Segment **GroupIntoSegments(Section **secs);
 
 int main(int argc, char **argv) {
 
@@ -176,7 +179,72 @@ int main(int argc, char **argv) {
         }
     }
 
+    // group sections into segments
+    Segment **segs = GroupIntoSegments(secs);
+    Log("general", "segments %i\n", ZTAS(segs));
+    for (size_t i = 0; i < ZTAS(segs); i++) {
+        Segment *seg = segs[i];
+    }
+
     return 0;
+}
+
+static Segment **GroupIntoSegments(Section **secs) {
+
+    size_t seg_cnt = 0;
+    Segment **segs = calloc(seg_cnt + 1, sizeof(Segment *));
+    uint64_t lats_flags = 0;
+
+    for (size_t i = 0; i < ZTAS(secs); i++) {
+
+        Section *sec = secs[i];
+
+        Log(
+            "segs",
+            sec->falloc ? "Including [%s] [%s]\n" : "Skipping [%s] [%s]\n", 
+            sec->name,
+            ELFSectionTypeName(sec->type));
+
+        if (!sec->falloc) {
+            continue;
+        }
+
+        if (lats_flags != sec->flags) {
+
+            assert((sec->addr % PAGE_SIZE) == 0);
+
+            seg_cnt++;
+            segs = realloc(segs, (seg_cnt + 1) * sizeof(Segment *));
+
+            Segment *seg = calloc(1, sizeof(Segment));
+            seg->secs = calloc(1, sizeof(Section *));
+
+            // TODO
+
+            segs[seg_cnt - 1] = seg;
+            segs[seg_cnt] = 0;
+
+            lats_flags = sec->flags;
+        }
+
+        Segment *seg = segs[seg_cnt - 1];
+        size_t sec_cnt = ZTAS(seg->secs);
+        sec_cnt++;
+        seg->secs = realloc(seg->secs, (sec_cnt + 1) * sizeof(Section * ));
+        seg->secs[sec_cnt - 1] = sec;
+        seg->secs[sec_cnt] = 0;
+    }
+
+    for (size_t i = 0; i < seg_cnt; i++) {
+        Segment *seg = segs[i];
+        size_t sec_cnt = ZTAS(seg->secs);
+        for (size_t k = 0; k < sec_cnt; k++) {
+            Section *sec = seg->secs[k];
+            Log("segs", "%lu:%lu [%s] [%s]\n", i, k, sec->name, sec->src);
+        }
+    }
+
+    return segs;
 }
 
 static size_t Align(size_t addr, size_t alignment) {
