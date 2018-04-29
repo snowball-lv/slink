@@ -1,18 +1,28 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <slink/SymTab.h>
 #include <slink/Error.h>
 #include <slink/Log.h>
 
 
-static Symbol *FindSym(SymTab *symtab, char *name) {
-    for (size_t i = 0; i < symtab->sym_cnt; i++) {
+static int UndefIndex(SymTab *symtab, char *name) {
+    assert(symtab->sym_cnt <= INT_MAX);
+    for (int i = 0; i < (int) symtab->sym_cnt; i++) {
         Symbol *sym = symtab->syms[i];
         if (strcmp(sym->name, name) == 0) {
-            return sym;
+            return i;
         }
+    }
+    return -1;
+}
+
+Symbol *SymTabGetDef(SymTab *symtab, char *name) {
+    int index = UndefIndex(symtab, name);
+    if (index != -1) {
+        return symtab->defs[index];
     }
     return 0;
 }
@@ -25,7 +35,8 @@ void SymTabAssert(SymTab *symtab) {
     size_t undefs = 0;
     for (size_t i = 0; i < symtab->sym_cnt; i++) {
         Symbol *sym = symtab->syms[i];
-        if (sym->def == 0) {
+        Symbol *def = symtab->defs[i];
+        if (def == 0) {
             Log("undefined", "[%s]\n", sym->name);
             undefs++;
         }
@@ -65,6 +76,7 @@ void SymTabAdd(SymTab *symtab, Symbol *sym) {
     switch (sym->type) {
         case STT_NOTYPE:
         case STT_FUNC:
+        case STT_OBJECT:
             break;
         default:
             ERROR(
@@ -72,10 +84,11 @@ void SymTabAdd(SymTab *symtab, Symbol *sym) {
                 ELFSymTypeName(sym->type));
     }
 
-    Symbol *last = FindSym(symtab, sym->name);
-    if (last != 0) {
+    int index = UndefIndex(symtab, sym->name);
+    if (index != -1) {
 
         // reconcile symbols
+        Symbol *last = symtab->syms[index];
 
         if (last == sym) {
             return;
@@ -108,14 +121,14 @@ void SymTabAdd(SymTab *symtab, Symbol *sym) {
 
         assert(!sym->is_shndx_special);
 
-        if (last->def == 0) {
+        if (symtab->defs[index] == 0) {
 
             Log("symtab", "Satisfied [%s]\n", sym->name);
-            last->def = sym;
+            symtab->defs[index] = sym;
         
         } else {
             
-            if (last->def == sym) {
+            if (symtab->defs[index] == sym) {
                 // already defined by this very same symbol
             } else {
                 ERROR("Multiple definitions of [%s]\n", sym->name);
@@ -134,10 +147,16 @@ void SymTabAdd(SymTab *symtab, Symbol *sym) {
         Log("symtab", "Requesting [%s]\n", sym->name);
         
         symtab->sym_cnt++;
+        
         symtab->syms = realloc(
             symtab->syms, 
             symtab->sym_cnt * (sizeof(Symbol *)));
+        
+        symtab->defs = realloc(
+            symtab->defs, 
+            symtab->sym_cnt * (sizeof(Symbol *)));
 
         symtab->syms[symtab->sym_cnt - 1] = sym;
+        symtab->defs[symtab->sym_cnt - 1] = 0;
     }
 }

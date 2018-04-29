@@ -11,6 +11,7 @@
 #include <slink/SLink.h>
 #include <slink/Error.h>
 #include <slink/Common.h>
+#include <slink/Amd64.h>
 
 
 // 1. Link undefined symbols to their definitions
@@ -164,6 +165,14 @@ int main(int argc, char **argv) {
                     "[%s] 0x%lx [%s]\n", 
                     sym->name, sym->value, sym->sec->name);
             }
+        }
+    }
+
+    // process relocations
+    for (size_t i = 0; i < ZTAS(secs); i++) {
+        Section *sec = secs[i];
+        if (sec->type == SHT_RELA) {
+            Amd64ApplyRelocations(&symtab, sec);
         }
     }
 

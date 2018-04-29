@@ -3,6 +3,8 @@
 #include "mod.h"
 
 
+const int MY_CONST = 1337;
+
 int main() {
     
     print("Hello world! From pure C!\n");
@@ -28,6 +30,8 @@ int main() {
 
     printf("printf int %i\n", 1337);
     printfln("printf int %i", -1337);
+
+    printf("const int %i\n", MY_CONST);
 
     return 0;
 }

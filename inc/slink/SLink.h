@@ -3,9 +3,16 @@
 #include <stdint.h>
 #include <slink/elf/ELF.h>
 
-typedef struct Section Section;
+typedef struct {
+    uint64_t    offset;
+    uint32_t    type;
+    uint32_t    sym;
+    int64_t	    addend;
+} RelocationA;
 
+typedef struct Section Section;
 typedef struct Symbol Symbol;
+
 struct Symbol {
 
     char *name;
@@ -16,7 +23,6 @@ struct Symbol {
 
     uint64_t value;
 
-    Symbol *def;
     Section *sec;
 };
 
@@ -36,8 +42,11 @@ struct Section {
     uint64_t addralign;
     uint64_t size;
 
-    Symbol **symtab;
+    uint8_t *data;
 
+    Symbol **symtab;
+    RelocationA **relas;
+    Section *target;
 };
 
 Section **ExtractSections(Elf *elf);
