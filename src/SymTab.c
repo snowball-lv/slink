@@ -48,6 +48,10 @@ void SymTabAssert(SymTab *symtab) {
     }
 }
 
+Symbol *SymTabGetDefIdx(SymTab *symtab, size_t index) {
+    return symtab->defs[index];
+}
+
 void SymTabAdd(SymTab *symtab, Symbol *sym) {
 
     switch (sym->binding) {
@@ -64,6 +68,7 @@ void SymTabAdd(SymTab *symtab, Symbol *sym) {
     if (sym->is_shndx_special) {
         switch (sym->shndx) {
             case SHN_UNDEF:
+            case SHN_COMMON:
                 break;
             default:
                 ERROR(
@@ -128,7 +133,23 @@ void SymTabAdd(SymTab *symtab, Symbol *sym) {
             if (symtab->defs[index] == sym) {
                 // already defined by this very same symbol
             } else {
-                ERROR("Multiple definitions of [%s]\n", sym->name);
+                Symbol *old = symtab->defs[index];
+                if (old->shndx == SHN_COMMON && sym->shndx == SHN_COMMON) {
+                    if (sym->size > old->size) {
+                        symtab->defs[index] = sym;
+                        Log(
+                            "symtab",
+                            "common [%s] %lu replaced with %lu\n",
+                            old->name, old->size, sym->size);
+                    } else {
+                        Log(
+                            "symtab",
+                            "common [%s] %lu ignores %lu\n",
+                            old->name, old->size, sym->size);
+                    }
+                } else {
+                    ERROR("Multiple definitions of [%s]\n", sym->name);
+                }
             }
         }
 

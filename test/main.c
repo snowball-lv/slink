@@ -3,6 +3,9 @@
 #include "mod.h"
 
 
+char my_common[1337];
+int my_common_int;
+
 const int MY_CONST = 1337;
 
 int main() {
@@ -12,7 +15,9 @@ int main() {
     char *str = "Test string\n";
     print(str);
     
+    printf("pre: my common int %i\n", my_common_int);
     mod_foo();
+    printf("post: my common int %i\n", my_common_int);
 
     char buffer[64];
     

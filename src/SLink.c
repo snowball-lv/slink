@@ -55,6 +55,7 @@ Section **ExtractSections(Elf *elf) {
                     sym->is_shndx_special = IsSectionSpecial(esym->st_shndx);
                     sym->shndx = esym->st_shndx;
                     sym->value = esym->st_value;
+                    sym->size = esym->st_size;
 
                     // patch after the loop
                     // requires all Section objects to be created

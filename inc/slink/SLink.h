@@ -22,6 +22,7 @@ struct Symbol {
     uint8_t is_shndx_special;
 
     uint64_t value;
+    uint64_t size;
 
     Section *sec;
 };

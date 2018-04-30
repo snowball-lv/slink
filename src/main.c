@@ -27,6 +27,17 @@ static void AssignSectionAddresses(Section **secs, size_t base);
 static Segment **GroupIntoSegments(Section **secs);
 static void CreateExecutable(char *file, Symbol *entry, Segment **segs);
 
+static size_t Align(size_t addr, size_t alignment) {
+    assert(alignment > 1);
+    addr += alignment - 1;
+    addr = (addr / alignment) * alignment;
+    return addr;
+}
+
+static size_t Align4k(size_t addr) {
+    return Align(addr, PAGE_SIZE);
+}
+
 int main(int argc, char **argv) {
 
     LogClear();
@@ -122,9 +133,46 @@ int main(int argc, char **argv) {
     Log("symtab", "Done linknig symbols\n");
     SymTabAssert(&symtab);
 
+    // create section for common symbols
+    Section *common = calloc(1, sizeof(Section));
+    common->src = "*SLink";
+    common->name = "slink.common";
+    common->type = SHT_NOBITS;
+    common->flags = SHF_ALLOC | SHF_WRITE;
+    common->falloc = 1;
+    common->fwrite = 1;
+
+    // lay out common symbols
+    for (size_t i = 0 ; i < SymTabSize(&symtab); i++) {
+        Symbol *sym = SymTabGetDefIdx(&symtab, i);
+        if (sym->shndx == SHN_COMMON) {
+            if (sym->value > common->addralign) {
+                common->addralign = sym->value;
+            }
+            sym->sec = common;
+        }
+    }
+    for (size_t i = 0 ; i < SymTabSize(&symtab); i++) {
+        Symbol *sym = SymTabGetDefIdx(&symtab, i);
+        if (sym->shndx == SHN_COMMON) {
+            common->size = Align(common->size, sym->value);
+            sym->value = common->size;
+            common->size += sym->size;
+        }
+    }
+
+    Log("common", "sum of common symbols %lu\n", common->size);
+    {
+        // append common section to list
+        size_t sec_cnt = ZTAS(secs);
+        sec_cnt++;
+        secs = realloc(secs, (sec_cnt + 1) * sizeof(Section *));
+        secs[sec_cnt - 1] = common;
+        secs[sec_cnt] = 0;
+    }
+
     // order sections for output
-    // subtract 1 from size to account for 0 terminator
-    qsort(secs, ZTAS(secs) - 1, sizeof(Section *), sec_order_compar);
+    qsort(secs, ZTAS(secs), sizeof(Section *), sec_order_compar);
 
     // assign section addresses
     AssignSectionAddresses(secs, 0x400000);
@@ -150,6 +198,13 @@ int main(int argc, char **argv) {
                         case SHN_ABS:
                         case SHN_UNDEF:
                             continue;
+                        case SHN_COMMON:
+                            if (sym->sec != 0) {
+                                sym->value += sym->sec->addr;
+                                break;
+                            } else {
+                                continue;
+                            }
                         default:
                             ERROR(
                                 "Can't handle shndx: [%s]\n",
@@ -171,6 +226,8 @@ int main(int argc, char **argv) {
         }
     }
 
+    Log("general", "symbols laid out\n");
+
     // process relocations
     for (size_t i = 0; i < ZTAS(secs); i++) {
         Section *sec = secs[i];
@@ -178,6 +235,8 @@ int main(int argc, char **argv) {
             Amd64ApplyRelocations(&symtab, sec);
         }
     }
+
+    Log("general", "relocations applied\n");
 
     // group sections into segments
     Segment **segs = GroupIntoSegments(secs);
@@ -189,17 +248,6 @@ int main(int argc, char **argv) {
     CreateExecutable("hello_world", entry, segs);
 
     return 0;
-}
-
-static size_t Align(size_t addr, size_t alignment) {
-    assert(alignment > 1);
-    addr += alignment - 1;
-    addr = (addr / alignment) * alignment;
-    return addr;
-}
-
-static size_t Align4k(size_t addr) {
-    return Align(addr, PAGE_SIZE);
 }
 
 static void CreateExecutable(char *file, Symbol *entry, Segment **segs) {

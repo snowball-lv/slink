@@ -15,13 +15,15 @@ void Amd64ApplyRelocations(SymTab *symtab, Section *sec) {
         }
     }
 
+    Log("general", "applying relocations of [%s] [%s]\n", sec->name, sec->src);
+
     for (size_t i = 0; i < ZTAS(sec->relas); i++) {
 
         RelocationA *rela = sec->relas[i];
         Symbol *sym = sec->symtab[rela->sym];
         Section *target = sec->target;
 
-        if (sym->shndx == SHN_UNDEF) {
+        if (sym->shndx == SHN_UNDEF || sym->shndx == SHN_COMMON) {
             sym = SymTabGetDef(symtab, sym->name);
             if (sym == 0) {
                 ERROR("[%s] is undefined\n", sym->name);
