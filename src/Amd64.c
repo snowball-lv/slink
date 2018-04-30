@@ -28,7 +28,6 @@ void Amd64ApplyRelocations(SymTab *symtab, Section *sec) {
             }
         }
 
-
         Log(
             "rela", 
             "%s [%s] [%s] [%s]\n",

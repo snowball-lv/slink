@@ -26,6 +26,7 @@
 static int sec_order_compar(const void *p1, const void *p2);
 static void AssignSectionAddresses(Section **secs, size_t base);
 static Segment **GroupIntoSegments(Section **secs);
+static void CreateExecutable(char *file, Symbol *entry, Segment **segs);
 
 int main(int argc, char **argv) {
 
@@ -62,7 +63,7 @@ int main(int argc, char **argv) {
         for (size_t k = sec_count; k < total; k++) {
             secs[k] = esecs[k - sec_count];
         }
-        secs[total - 1] = 0;
+        secs[total] = 0;
     }
 
     Log("general", "%lu files loaded\n", argc - 1);
@@ -182,11 +183,151 @@ int main(int argc, char **argv) {
     // group sections into segments
     Segment **segs = GroupIntoSegments(secs);
     Log("general", "segments %i\n", ZTAS(segs));
-    for (size_t i = 0; i < ZTAS(segs); i++) {
-        Segment *seg = segs[i];
-    }
+
+    // create executable
+    Symbol *entry = SymTabGetDef(&symtab, "_start");
+    assert(entry != 0);
+    CreateExecutable("hello_world", entry, segs);
 
     return 0;
+}
+
+static size_t Align(size_t addr, size_t alignment) {
+    assert(alignment > 1);
+    addr += alignment - 1;
+    addr = (addr / alignment) * alignment;
+    return addr;
+}
+
+static size_t Align4k(size_t addr) {
+    return Align(addr, PAGE_SIZE);
+}
+
+static void CreateExecutable(char *file, Symbol *entry, Segment **segs) {
+
+    FILE *out = fopen(file, "w");
+    assert(out);
+
+    ELFIdent ident = {
+        .FileIdent      = { 0x7f, 'E', 'L', 'F' },
+        .FileClass      = ELFCLASS64,
+        .DataEncoding   = ELFDATA2LSB,
+        .FileVersion    = EV_CURRENT,
+        .OSABIIdent     = 0,
+        .ABIVersion     = 0
+    };
+
+    size_t seg_cnt = ZTAS(segs);
+
+    Elf64_Ehdr ehdr = {
+
+        .e_type         = ET_EXEC,
+        .e_machine      = EM_X86_64,
+        .e_version      = EV_CURRENT,
+
+        .e_entry        = entry->value,
+
+        .e_phoff        = sizeof(Elf64_Ehdr),
+        .e_phnum        = (short unsigned) seg_cnt,
+        .e_phentsize    = sizeof(Elf64_Phdr),
+
+        .e_ehsize       = sizeof(Elf64_Ehdr),
+
+        .e_flags        = 0,
+        .e_shoff        = 0,
+        .e_shnum        = 0,
+        .e_shentsize    = 0,
+        .e_shstrndx     = SHN_UNDEF,
+    };
+
+    memcpy(ehdr.e_ident, &ident, EI_NIDENT);
+    fwrite(&ehdr, sizeof(Elf64_Ehdr), 1, out);
+
+    Elf64_Phdr *phdrs = calloc(seg_cnt, sizeof(Elf64_Phdr));
+    for (size_t i = 0; i < seg_cnt; i++) {
+
+        Elf64_Phdr *phdr = &phdrs[i];
+        phdr->p_type    = PT_LOAD;
+        phdr->p_flags   = PF_R;
+        phdr->p_offset  = 0;
+        phdr->p_vaddr   = 0;
+        phdr->p_paddr   = 0;
+        phdr->p_filesz  = 0;
+        phdr->p_memsz   = 0;
+        phdr->p_align    = PAGE_SIZE;
+
+        Segment *seg = segs[i];
+        size_t sec_cnt = ZTAS(seg->secs);
+        for (size_t k = 0; k < sec_cnt; k++) {
+
+            Section *sec = seg->secs[k];
+
+            if (sec->fwrite) {
+                phdr->p_flags |= PF_W;
+            }
+
+            if (sec->fexecinstr) {
+                phdr->p_flags |= PF_X;
+            }
+
+            if (k == 0) {
+                assert(sec->addr % PAGE_SIZE == 0);
+                phdr->p_vaddr = sec->addr;
+            }
+
+            if (sec->addralign > 1) {
+                phdr->p_memsz = Align(phdr->p_memsz, sec->addralign);
+            }
+            phdr->p_memsz += sec->size;
+
+            if (sec->type == SHT_PROGBITS) {
+                if (sec->addralign > 1) {
+                    phdr->p_filesz = Align(phdr->p_filesz, sec->addralign);
+                }
+                phdr->p_filesz += sec->size;
+            }
+        }
+    }
+
+    size_t data_off = 0;
+    data_off += sizeof(Elf64_Ehdr);
+    data_off += seg_cnt * sizeof(Elf64_Phdr);
+    data_off = Align4k(data_off);
+    
+    for (size_t i = 0; i < seg_cnt; i++) {
+        Elf64_Phdr *phdr = &phdrs[i];
+        phdr->p_offset = data_off;
+        data_off += phdr->p_filesz;
+        data_off = Align4k(data_off);
+    }
+    
+    for (size_t i = 0; i < seg_cnt; i++) {
+        Elf64_Phdr *phdr = &phdrs[i];
+        fwrite(phdr, sizeof(Elf64_Phdr), 1, out);
+    }
+    
+    for (size_t i = 0; i < seg_cnt; i++) {
+        
+        Segment *seg = segs[i];
+        Elf64_Phdr *phdr = &phdrs[i];
+
+        assert(phdr->p_offset <= LONG_MAX);
+        long offset = (long) phdr->p_offset;
+        
+        size_t sec_cnt = ZTAS(seg->secs);
+        for (size_t k = 0; k < sec_cnt; k++) {
+            Section *sec = seg->secs[k];
+            if (sec->addralign > 1) {
+                offset = (long) Align((size_t) offset, sec->addralign);
+            }
+            fseek(out, offset, SEEK_SET);
+            if (sec->type == SHT_PROGBITS) {
+                fwrite(sec->data, 1, sec->size, out);
+            }
+            offset += (long) sec->size;
+        }
+    }
+    fclose(out);
 }
 
 static Segment **GroupIntoSegments(Section **secs) {
@@ -245,17 +386,6 @@ static Segment **GroupIntoSegments(Section **secs) {
     }
 
     return segs;
-}
-
-static size_t Align(size_t addr, size_t alignment) {
-    assert(alignment > 1);
-    addr += alignment - 1;
-    addr = (addr / alignment) * alignment;
-    return addr;
-}
-
-static size_t Align4k(size_t addr) {
-    return Align(addr, PAGE_SIZE);
 }
 
 static void AssignSectionAddresses(Section **secs, size_t base) {
