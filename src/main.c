@@ -275,12 +275,15 @@ static size_t MaxAlignment(Section **secs) {
 static void AssignAddresses(Segment **segs, size_t base) {
 
     size_t addr = base;
-
     size_t seg_cnt = ZTAS(segs);
+
+    addr += sizeof(Elf64_Ehdr);
+    addr += seg_cnt * sizeof(Elf64_Phdr);
+
     for (size_t i = 0; i < seg_cnt; i++) {
 
         Segment *seg = segs[i];
-        addr = Align4k(addr);
+        addr += PAGE_SIZE;
 
         size_t sec_cnt = ZTAS(seg->secs);
         for (size_t k = 0; k < sec_cnt; k++) {
@@ -302,6 +305,10 @@ static void AssignAddresses(Segment **segs, size_t base) {
             addr += sec->size;
         }
     }
+}
+
+static size_t Floor4k(size_t addr) {
+    return (addr / PAGE_SIZE) * PAGE_SIZE;
 }
 
 static void CreateExecutable(char *file, Symbol *entry, Segment **segs) {
@@ -372,19 +379,21 @@ static void CreateExecutable(char *file, Symbol *entry, Segment **segs) {
             }
 
             if (k == 0) {
-                assert(sec->addr % PAGE_SIZE == 0);
-                phdr->p_vaddr = sec->addr;
+                phdr->p_vaddr = Floor4k(sec->addr);
+                phdr->p_memsz += sec->addr - phdr->p_vaddr;
+                phdr->p_filesz += sec->addr - phdr->p_vaddr;
             }
 
-            if (sec->addralign > 1) {
-                phdr->p_memsz = Align(phdr->p_memsz, sec->addralign);
+            size_t alignment = sec->addralign;
+            if (alignment == 0) {
+                alignment = 1;
             }
+
+            phdr->p_memsz = Align(phdr->p_memsz, alignment);
             phdr->p_memsz += sec->size;
 
             if (sec->type == SHT_PROGBITS) {
-                if (sec->addralign > 1) {
-                    phdr->p_filesz = Align(phdr->p_filesz, sec->addralign);
-                }
+                phdr->p_filesz = Align(phdr->p_filesz, alignment);
                 phdr->p_filesz += sec->size;
             }
         }
@@ -393,13 +402,11 @@ static void CreateExecutable(char *file, Symbol *entry, Segment **segs) {
     size_t data_off = 0;
     data_off += sizeof(Elf64_Ehdr);
     data_off += seg_cnt * sizeof(Elf64_Phdr);
-    data_off = Align4k(data_off);
     
     for (size_t i = 0; i < seg_cnt; i++) {
         Elf64_Phdr *phdr = &phdrs[i];
-        phdr->p_offset = data_off;
+        phdr->p_offset = Floor4k(data_off);
         data_off += phdr->p_filesz;
-        data_off = Align4k(data_off);
     }
     
     for (size_t i = 0; i < seg_cnt; i++) {
@@ -412,22 +419,20 @@ static void CreateExecutable(char *file, Symbol *entry, Segment **segs) {
         Segment *seg = segs[i];
         Elf64_Phdr *phdr = &phdrs[i];
 
-        assert(phdr->p_offset <= LONG_MAX);
-        long offset = (long) phdr->p_offset;
-        
         size_t sec_cnt = ZTAS(seg->secs);
         for (size_t k = 0; k < sec_cnt; k++) {
+
             Section *sec = seg->secs[k];
-            if (sec->addralign > 1) {
-                offset = (long) Align((size_t) offset, sec->addralign);
-            }
-            fseek(out, offset, SEEK_SET);
+
+            size_t off = phdr->p_offset + (sec->addr - phdr->p_vaddr);
+
+            fseek(out, off, SEEK_SET);
             if (sec->type == SHT_PROGBITS) {
                 fwrite(sec->data, 1, sec->size, out);
             }
-            offset += (long) sec->size;
         }
     }
+
     fclose(out);
 }
 
