@@ -100,39 +100,23 @@ void ARReadArchive(char *path, Archive *archive) {
     archive->sym_tab = ((char *) sym_tab_fh) + sizeof(ARFileHeader);
 
     ARFileHeader *str_tab_fh = FindFile(archive, "//");
-    assert(str_tab_fh != 0);
-    archive->str_tab = ((char *) str_tab_fh) + sizeof(ARFileHeader);
-
-    // replace LF with 0 in str_tab
-    // makes it easier to use as strings
-    size_t str_tab_size = strtoul(str_tab_fh->FileSize, 0, 10);
-    for (size_t i = 0; i < str_tab_size; i++) {
-        if (archive->str_tab[i] == '\n') {
-            archive->str_tab[i] = 0;
+    if (str_tab_fh != 0) {
+        
+        assert(str_tab_fh != 0);
+        archive->str_tab = ((char *) str_tab_fh) + sizeof(ARFileHeader);
+        
+        // replace LF with 0 in str_tab
+        // makes it easier to use as strings
+        size_t str_tab_size = strtoul(str_tab_fh->FileSize, 0, 10);
+        for (size_t i = 0; i < str_tab_size; i++) {
+            if (archive->str_tab[i] == '\n') {
+                archive->str_tab[i] = 0;
+            }
         }
     }
 
     archive->loaded = 0;
     archive->loaded_cnt = 0;
-
-    // printf("\n");
-    // printf("[%s]\n", path);
-    // printf("------------------------------\n");
-    // printf("\n");
-
-    // // log symbols
-    // char *ptr = archive->sym_tab;
-    // uint32_t sym_cnt = ReadU32BE(ptr);
-    // ptr += 4;
-    // ptr += sym_cnt * 4;
-    // for (size_t i = 0; i < sym_cnt; i++) {
-    //     printf("[%s]\n", ptr);
-    //     ptr += strlen(ptr) + 1;
-    // }
-
-    // printf("\n");
-    // printf("------------------------------\n");
-
 }
 
 static ARFileHeader *GetSymFH(Archive *archive, char *name) {
@@ -231,7 +215,7 @@ Elf *ARElfOfSym(Archive *ar, char *name) {
 
     fprintf(
         stderr, 
-        "Archive doesn not define symbol [%s]\n",
+        "Archive does not define symbol [%s]\n",
         name);
     exit(1);
 }

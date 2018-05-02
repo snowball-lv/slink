@@ -16,3 +16,4 @@ size_t SymTabSize(SymTab *symtab);
 void SymTabAssert(SymTab *symtab);
 Symbol *SymTabGetDef(SymTab *symtab, char *name);
 Symbol *SymTabGetDefIdx(SymTab *symtab, size_t index);
+Symbol *SymTabGetSymIdx(SymTab *symtab, size_t index);

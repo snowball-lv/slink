@@ -55,29 +55,68 @@ int main(int argc, char **argv) {
         char *file = argv[i];
         Log("input", "File [%s]\n", file);
 
-        Elf *elf = calloc(1, sizeof(Elf));
-        ELFRead(file, elf);
+        if (IsElf(file)) {
 
-        Section **esecs = ExtractSections(elf);
-        size_t esec_count = ZTArraySize((void **) esecs);
+            Elf *elf = calloc(1, sizeof(Elf));
+            ELFRead(file, elf);
 
-        Log("input", "[%s] secs %lu (%lu)\n", file, esec_count, elf->shnum);
+            Section **esecs = ExtractSections(elf);
+            size_t esec_count = ZTArraySize((void **) esecs);
 
-        size_t sec_count = ZTArraySize((void **) secs);
-        size_t total = sec_count + esec_count;
+            Log("input", "[%s] secs %lu (%lu)\n", file, esec_count, elf->shnum);
 
-        secs = realloc(secs, (total + 1) * sizeof(Section *));
+            size_t sec_count = ZTArraySize((void **) secs);
+            size_t total = sec_count + esec_count;
 
-        for (size_t k = sec_count; k < total; k++) {
-            secs[k] = esecs[k - sec_count];
+            secs = realloc(secs, (total + 1) * sizeof(Section *));
+
+            for (size_t k = sec_count; k < total; k++) {
+                secs[k] = esecs[k - sec_count];
+            }
+            secs[total] = 0;
+
+        } else {
+
+            assert(IsArchive(file));
+            printf("archive [%s]\n", file);
+
+            // for archives, insert a dummy section that points to the archive.
+            // use this section when resolving symbols to check if the currently 
+            // undefined symbols in the symtab are definined within the archive.
+            // if they are, extract the objects from the archive, and add their
+            // sections to the master section list before this dummy section.
+            // otherwise, ignore this section.
+
+            Archive *archive = calloc(1, sizeof(Archive));
+            ARReadArchive(file, archive);
+
+            Section *dummy = calloc(1, sizeof(Section));
+
+            size_t name_size = strlen(file) + strlen("*SLink:");
+            
+            dummy->src = malloc(name_size + 1);
+            sprintf(dummy->src, "*SLink:%s", file);
+
+            dummy->name = "slink.ar.symtab";
+            dummy->type = SHT_NULL;
+
+            dummy->is_archive_symtab = 1;
+            dummy->archive = archive;
+            
+            size_t sec_count = ZTAS(secs);
+            size_t total = sec_count + 1;
+
+            secs = realloc(secs, (total + 1) * sizeof(Section *));
+
+            secs[total - 1] = dummy;
+            secs[total] = 0;
         }
-        secs[total] = 0;
     }
 
     Log("general", "%lu files loaded\n", argc - 1);
     Log("general", "%lu sections loaded\n", ZTArraySize((void **) secs));
 
-    // log names for all laoded sections
+    // log names for all loaded sections
     for (size_t i = 0; i < ZTArraySize((void **) secs); i++) {
         Section *sec = secs[i];
         Log("sec", "[%s] [%s]\n", sec->name, sec->src);
@@ -99,6 +138,7 @@ int main(int argc, char **argv) {
         if (strcmp(sec->name, ".rela.text") == 0) { continue; }
         if (strcmp(sec->name, ".rela.eh_frame") == 0) { continue; }
         if (strcmp(sec->name, ".note.GNU-stack") == 0) { continue; }
+        if (strcmp(sec->name, "slink.ar.symtab") == 0) { continue; }
         ERROR("Don't know how to handle section [%s]\n", sec->name);
     }
 
@@ -111,15 +151,69 @@ int main(int argc, char **argv) {
 
         size_t last_size = SymTabSize(&symtab);
 
-        size_t sec_count = ZTArraySize((void **) secs);
-        for (size_t i = 0; i < sec_count; i++) {
+        for (size_t i = 0; i < ZTAS(secs); i++) {
+
             Section *sec = secs[i];
+            printf("--- [%s] [%s]\n", sec->name, sec->src);
+
             if (sec->type == SHT_SYMTAB) {
 
                 size_t sym_cnt = ZTArraySize((void **) sec->symtab);
                 for (size_t k = 0; k < sym_cnt; k++) {
                     Symbol *sym = sec->symtab[k];
                     SymTabAdd(&symtab, sym);
+                }
+
+            } else if (sec->is_archive_symtab) {
+
+                int loaded_mod = 0;
+
+                size_t size = SymTabSize(&symtab);
+                for (size_t k = 0; k < size; k++) {
+                    
+                    Symbol *sym = SymTabGetSymIdx(&symtab, k);
+                    Symbol *def = SymTabGetDefIdx(&symtab, k);
+
+                    if (def == 0 && ARDefinesSymbol(sec->archive, sym->name)) {
+
+                        printf("[%s] defined in [%s]\n", sym->name, sec->src);
+                        
+                        // load object from archive and add it to section list
+                        ARLoadModuleWithSymbol(sec->archive, sym->name);
+                        Elf *elf = ARElfOfSym(sec->archive, sym->name);
+
+                        // extract sections
+                        Section **esecs = ExtractSections(elf);
+                        size_t esec_count = ZTAS(esecs);
+
+                        printf("%lu sections extracted\n", esec_count);
+
+                        // resize section array
+                        size_t sec_count = ZTAS(secs);
+                        size_t total = sec_count + esec_count;
+                        secs = realloc(secs, (total + 1) * sizeof(Section *));
+
+                        // shift remaining sections to end of list
+                        for (size_t n = i; n < sec_count; n++) {
+                            secs[n + esec_count] = secs[n];
+                        }
+
+                        // insert new sections right before dummy 
+                        // section (current)
+                        for (size_t n = 0; n < esec_count; n++) {
+                            secs[i + n] = esecs[n];
+                        }
+
+                        secs[total] = 0;
+
+                        loaded_mod = 1;
+                        break;
+                    }
+                }
+
+                if (loaded_mod) {
+                    i--;
+                    continue;
                 }
             }
         }

@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <slink/elf/ELF.h>
+#include <slink/elf/Archive.h>
 
 typedef struct {
     uint64_t    offset;
@@ -48,6 +49,10 @@ struct Section {
     Symbol **symtab;
     RelocationA **relas;
     Section *target;
+
+    // kludge to help intepret the archive sym table as a section
+    int is_archive_symtab;
+    Archive *archive;
 };
 
 typedef struct {

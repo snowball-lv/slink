@@ -52,6 +52,10 @@ Symbol *SymTabGetDefIdx(SymTab *symtab, size_t index) {
     return symtab->defs[index];
 }
 
+Symbol *SymTabGetSymIdx(SymTab *symtab, size_t index) {
+    return symtab->syms[index];
+}
+
 void SymTabAdd(SymTab *symtab, Symbol *sym) {
 
     switch (sym->binding) {
