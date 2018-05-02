@@ -1,4 +1,4 @@
-#include "slink-c.h"
+#include <slink-c.h>
 
 
 int putchar (int character) {

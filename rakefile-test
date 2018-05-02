@@ -10,9 +10,13 @@ OBJS = SRCS.pathmap("out/%X.o")
 ASM_SRCS = FileList["test/**/*.asm"]
 ASM_OBJS = ASM_SRCS.pathmap("out/%X.asm.o")
 
+LIB_C = "bin/libslink-c.a"
+LIB_SYS = "bin/libslink-sys.a"
+
+
 CFLAGS = [
     "-c",
-    # "-I inc",
+    "-I test/inc",
     # "-O2",
     "-Wall",
     "-Wextra",
@@ -45,4 +49,12 @@ ASM_SRCS.zip(ASM_OBJS).each do |src, obj|
     end
 end
 
-task :default => OBJS + ASM_OBJS
+file LIB_C => OBJS + ASM_OBJS do
+    sh "ar rcs #{LIB_C} #{ FileList["out/test/slink-c/**/*.o"] }"
+end
+
+file LIB_SYS => OBJS + ASM_OBJS do
+    sh "ar rcs #{LIB_SYS} #{ FileList["out/test/slink-sys/**/*.o"] }"
+end
+
+task :default => [ LIB_C, LIB_SYS ]

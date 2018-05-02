@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include "slink-c.h"
+#include <slink-c.h>
 #include "mod.h"
 
 

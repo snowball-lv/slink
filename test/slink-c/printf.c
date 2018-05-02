@@ -1,5 +1,5 @@
 #include <stdarg.h>
-#include "slink-c.h"
+#include <slink-c.h>
 
 
 int printf (const char *format, ... ) {

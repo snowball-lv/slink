@@ -1,4 +1,4 @@
-#include "slink-sys.h"
+#include <slink-sys.h>
 
 
 void exit (int status) {
