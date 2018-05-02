@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
         } else {
 
             assert(IsArchive(file));
-            printf("archive [%s]\n", file);
+            Log("input", "Archive [%s]\n", file);
 
             // for archives, insert a dummy section that points to the archive.
             // use this section when resolving symbols to check if the currently 
@@ -154,7 +154,6 @@ int main(int argc, char **argv) {
         for (size_t i = 0; i < ZTAS(secs); i++) {
 
             Section *sec = secs[i];
-            printf("--- [%s] [%s]\n", sec->name, sec->src);
 
             if (sec->type == SHT_SYMTAB) {
 
@@ -176,17 +175,19 @@ int main(int argc, char **argv) {
 
                     if (def == 0 && ARDefinesSymbol(sec->archive, sym->name)) {
 
-                        printf("[%s] defined in [%s]\n", sym->name, sec->src);
+                        Log("symtab", "[%s] found in archive [%s]\n", sym->name, sec->src);
                         
                         // load object from archive and add it to section list
                         ARLoadModuleWithSymbol(sec->archive, sym->name);
                         Elf *elf = ARElfOfSym(sec->archive, sym->name);
 
+                        Log("symtab", "Loaded [%s] from archive [%s]\n", elf->path, sec->src);
+
                         // extract sections
                         Section **esecs = ExtractSections(elf);
                         size_t esec_count = ZTAS(esecs);
 
-                        printf("%lu sections extracted\n", esec_count);
+                        Log("symtab", "%lu sections extracted from [%s]\n", esec_count, elf->path);
 
                         // resize section array
                         size_t sec_count = ZTAS(secs);
