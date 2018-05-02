@@ -1,4 +1,5 @@
-#include "system.h"
+#include "slink-sys.h"
+#include "slink-c.h"
 
 
 int print(char *str) {

@@ -1,4 +1,5 @@
-#include "system.h"
+#include <stddef.h>
+#include "slink-c.h"
 
 
 static int iabs(int i);

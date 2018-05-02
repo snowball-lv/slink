@@ -1,5 +1,5 @@
 #include "mod.h"
-#include "system.h"
+#include "slink-c.h"
 
 
 char my_common[777];
