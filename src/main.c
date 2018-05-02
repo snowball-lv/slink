@@ -36,10 +36,6 @@ static size_t Align(size_t addr, size_t alignment) {
     return addr;
 }
 
-static size_t Align4k(size_t addr) {
-    return Align(addr, PAGE_SIZE);
-}
-
 int main(int argc, char **argv) {
 
     LogClear();
@@ -260,18 +256,6 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-static size_t MaxAlignment(Section **secs) {
-    size_t max = 1;
-    size_t sec_cnt = ZTAS(secs);
-    for (size_t k = 0; k < sec_cnt; k++) {
-        Section *sec = secs[k];
-        if (sec->addralign > max) {
-            max = sec->addralign;
-        }
-    }
-    return max;
-}
-
 static void AssignAddresses(Segment **segs, size_t base) {
 
     size_t addr = base;
@@ -426,7 +410,8 @@ static void CreateExecutable(char *file, Symbol *entry, Segment **segs) {
 
             size_t off = phdr->p_offset + (sec->addr - phdr->p_vaddr);
 
-            fseek(out, off, SEEK_SET);
+            assert(off <= LONG_MAX);
+            fseek(out, (long) off, SEEK_SET);
             if (sec->type == SHT_PROGBITS) {
                 fwrite(sec->data, 1, sec->size, out);
             }
